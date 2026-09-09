@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Distribution / Packaging
+*.egg-info/
+build/
+dist/
+*.egg
+
+# Testing & cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+

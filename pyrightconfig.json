@@ -1,0 +1,8 @@
+{
+  "include": ["."],
+  "extraPaths": [
+    "C:/Users/Administrator/AppData/Local/Programs/Python/Python314/Lib/site-packages",
+    "."
+  ],
+  "reportMissingImports": "none"
+}

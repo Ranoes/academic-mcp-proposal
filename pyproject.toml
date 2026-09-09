@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "academic-proposal-mcp"
+version = "1.0.0"
+description = "Universal MCP Server for Academic Proposal Generation and Research Canvas Validation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.2.0,<2.0.0",
+    "python-docx>=1.1.0",
+    "pydantic>=2.0.0"
+]
+
+[project.scripts]
+academic-proposal-mcp = "server:main"
+
+[tool.setuptools]
+py-modules = ["server", "builder_engine", "canvas_validator", "csv_ingestor", "topic_synthesizer"]
+
+[tool.setuptools.package-data]
+"*" = ["assets/**/*"]
+
