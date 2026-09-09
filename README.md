@@ -2,7 +2,7 @@
 
 [![MCP Version](https://img.shields.io/badge/MCP-1.2.0-blue.svg)](https://modelcontextprotocol.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 **Academic Proposal MCP Server** is a self-contained, independent server built on the **Model Context Protocol (MCP)**. It is designed for students, researchers, and academic institutions to automate the creation, structuring, iterative versioning, and methodology validation of formal academic thesis and research proposals.
 
@@ -260,4 +260,4 @@ If you have [`paper-search-mcp`](https://github.com/modelcontextprotocol/servers
 
 ## 📄 License & Contributing
 
-Distributed under the **MIT License**. Contributions, issue reports, and pull requests to expand academic formatting capabilities or validation rules are warmly welcomed.
+Distributed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See [LICENSE](file:///d:/Project/academic-mcp-proposal/LICENSE) for more details. Contributions, issue reports, and pull requests to expand academic formatting capabilities or validation rules are warmly welcomed.
