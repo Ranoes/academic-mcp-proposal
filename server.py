@@ -22,8 +22,18 @@ from builder_engine import (
     record_version_change,
     DEFAULT_TEMPLATE_PATH
 )
+from praproposal_builder import (
+    build_praproposal_odt,
+    DEFAULT_PRA_TEMPLATE_PATH
+)
 from csv_ingestor import parse_literature_csv
-from topic_synthesizer import plan_research, synthesize_proposal_from_inputs
+from topic_synthesizer import (
+    plan_research,
+    synthesize_proposal_from_inputs,
+    synthesize_praproposal_from_inputs,
+    check_missing_student_metadata
+)
+
 
 
 mcp = FastMCP("academic-proposal-mcp")
@@ -405,6 +415,8 @@ def generate_proposal_from_topic(
         template_path=tpl_path
     )
 
+    meta_check = check_missing_student_metadata(student_metadata, is_praproposal=False)
+
     return {
         "status": doc_result.get("status", "SUCCESS"),
         "output_filename": output_filename,
@@ -414,25 +426,232 @@ def generate_proposal_from_topic(
         "variabel_y": vy,
         "total_literature_records": len(records),
         "canvas_compliance": canvas_check,
+        "student_metadata_status": meta_check,
         "document_stats": doc_result
     }
+
+@mcp.tool()
+def generate_academic_praproposal(
+    metadata: Dict[str, Any],
+    sections: Dict[str, Any],
+    output_filename: str = "Praproposal Skripsi v1.0.odt",
+    custom_template_filename: Optional[str] = None
+) -> dict:
+    """
+    Membuat berkas Dokumen Pra-Proposal Skripsi (.odt) berbasis template resmi SA2-01A.
+    Menerima metadata mahasiswa dan struktur konten (latar_belakang, landasan_kepustakaan,
+    rumusan_masalah, metode, daftar_pustaka).
+    """
+    out_path = os.path.join(WORKSPACE_DIR, output_filename)
+    tpl_path = None
+    if custom_template_filename:
+        custom_p = os.path.join(WORKSPACE_DIR, custom_template_filename)
+        if os.path.exists(custom_p):
+            tpl_path = custom_p
+
+    try:
+        res_path = build_praproposal_odt(
+            metadata=metadata,
+            sections=sections,
+            output_path=out_path,
+            template_path=tpl_path
+        )
+        return {
+            "status": "SUCCESS",
+            "output_filename": output_filename,
+            "saved_path": res_path,
+            "message": f"Dokumen pra-proposal berhasil dibuat di {output_filename}"
+        }
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "message": f"Gagal membuat dokumen pra-proposal: {str(e)}"
+        }
+
+@mcp.tool()
+def generate_praproposal_from_topic(
+    topic: str,
+    variabel_x: Optional[str] = None,
+    variabel_y: Optional[str] = None,
+    student_metadata: Optional[Dict[str, str]] = None,
+    csv_filename: Optional[str] = None,
+    csv_content: Optional[str] = None,
+    retrieved_papers: Optional[List[Dict[str, Any]]] = None,
+    latar_belakang_notes: Optional[List[str]] = None,
+    metode_penelitian_notes: Optional[List[str]] = None,
+    output_filename: str = "Praproposal Skripsi v1.0.odt",
+    custom_template_filename: Optional[str] = None
+) -> dict:
+    """
+    Menghasilkan dokumen pra-proposal skripsi (.odt) SA2-01A secara otomatis dari topik penelitian,
+    data CSV literatur di workspace, dan/atau data paper yang diperoleh dari MCP paper-search.
+    Menyusun Latar Belakang (<= 500 kata), Landasan Kepustakaan (<= 250 kata),
+    Rumusan Masalah (numbering), Metode (<= 250 kata), dan Daftar Pustaka.
+    """
+    # 1. Turunkan atau validasi X dan Y
+    plan = plan_research(topic=topic, variabel_x=variabel_x, variabel_y=variabel_y)
+    vx = plan["variabel_x"]
+    vy = plan["variabel_y"]
+
+    # 2. Metadata default
+    meta = {
+        "judul": topic.upper(),
+        "nama_mahasiswa": "Mahasiswa Peneliti",
+        "nim": "225150200111000",
+        "jurusan": "Teknik Informatika",
+        "program_studi": "Teknik Informatika",
+        "keminatan": "Komputasi Cerdas",
+        "bidang_skripsi": "Artificial Intelligence & Data Science",
+        "jenis_penelitian": "Implementatif",
+        "tipe_penelitian": "Pengembangan Sistem & Komparasi Algoritma",
+        "asal_judul": "Usulan Sendiri",
+        "lokasi": "Malang",
+        "nama_pembimbing": "Dr. Mahrus Ali, S.Kom., M.Kom.",
+        "nip_pembimbing": "-"
+    }
+    if student_metadata:
+        meta.update(student_metadata)
+
+    # 3. Proses literatur dari CSV jika ada
+    records = []
+    references = []
+
+    if csv_filename or csv_content:
+        csv_file_path = os.path.join(WORKSPACE_DIR, csv_filename) if csv_filename else None
+        csv_res = parse_literature_csv(file_path=csv_file_path, csv_content=csv_content)
+        if csv_res.get("status") == "SUCCESS":
+            records.extend(csv_res.get("records", []))
+            references.extend(csv_res.get("references", []))
+
+    # 4. Tambahkan data dari retrieved_papers (hasil paper-search MCP)
+    if retrieved_papers:
+        for p in retrieved_papers:
+            title = p.get("title", "Paper Referensi")
+            authors = p.get("authors") or p.get("author") or "Peneliti Terkait"
+            if isinstance(authors, list):
+                authors = ", ".join(authors[:2]) + (" et al." if len(authors) > 2 else "")
+            year = str(p.get("year") or p.get("published") or "2024")[:4]
+            method = p.get("method") or p.get("snippet") or "-"
+            results = p.get("results") or p.get("abstract") or "-"
+            gap = p.get("gap") or "Perlu optimasi kinerja pada skala data nyata"
+
+            records.append({
+                "author": str(authors),
+                "year": year,
+                "title": title,
+                "method": str(method)[:150],
+                "results": str(results)[:200],
+                "gap": gap
+            })
+
+            ref_str = f"{authors}, {year}. {title}."
+            if p.get("doi"):
+                ref_str += f" DOI: {p.get('doi')}."
+            elif p.get("url"):
+                ref_str += f" Tersedia di: {p.get('url')}."
+            references.append(ref_str)
+
+    # 5. Sintesis konten pra-proposal
+    pra_payload = synthesize_praproposal_from_inputs(
+        topic=topic,
+        metadata=meta,
+        variabel_x=vx,
+        variabel_y=vy,
+        literature_records=records,
+        references=references,
+        latar_belakang_notes=latar_belakang_notes,
+        metode_notes=metode_penelitian_notes
+    )
+
+    # 6. Validasi Research Canvas
+    rm_str = "\n".join(pra_payload["sections"]["rumusan_masalah"])
+    canvas_check = check_research_canvas(
+        rumusan_masalah=rm_str,
+        variabel_independen=vx,
+        variabel_dependen=vy,
+        tujuan_penelitian=plan["tujuan_umum"],
+        manfaat_penelitian="Membantu pengambil keputusan dalam optimasi kinerja sistem",
+        single_problem_only=True
+    )
+
+    # 7. Generate berkas ODT
+    out_path = os.path.join(WORKSPACE_DIR, output_filename)
+    tpl_path = None
+    if custom_template_filename:
+        custom_p = os.path.join(WORKSPACE_DIR, custom_template_filename)
+        if os.path.exists(custom_p):
+            tpl_path = custom_p
+
+    res_path = build_praproposal_odt(
+        metadata=pra_payload["metadata"],
+        sections=pra_payload["sections"],
+        output_path=out_path,
+        template_path=tpl_path
+    )
+
+    meta_check = check_missing_student_metadata(student_metadata, is_praproposal=True)
+
+    return {
+        "status": "SUCCESS",
+        "output_filename": output_filename,
+        "saved_path": res_path,
+        "topic": topic,
+        "variabel_x": vx,
+        "variabel_y": vy,
+        "total_literature_records": len(records),
+        "canvas_compliance": canvas_check,
+        "student_metadata_status": meta_check,
+        "praproposal_data": pra_payload
+    }
+
+@mcp.prompt()
+def auto_praproposal_workflow(topic: str, csv_filename: str = "") -> str:
+    """
+    Panduan alur orkestrasi pembuatan pra-proposal skripsi (Form SA2-01A .odt) bagi asisten AI:
+    Menanyakan kelengkapan data mahasiswa, meneliti literatur, dan menghasilkan naskah pra-proposal.
+    """
+    return f"""Anda bertindak sebagai asisten akademis ahli untuk penyusunan Dokumen Pra-Proposal Skripsi (Form SA2-01A).
+Topik yang diajukan pengguna: "{topic}"
+Berkas CSV literatur di workspace: "{csv_filename or 'Tidak ada (gunakan paper-search jika diperlukan)'}"
+
+Langkah-langkah yang harus dilakukan oleh agen:
+1. PERIKSA INFORMASI MAHASISWA:
+   Periksa apakah pengguna sudah memberikan detail identitas:
+   - Nama Mahasiswa
+   - NIM
+   - Jurusan & Program Studi
+   - Keminatan & Bidang Skripsi
+   - Nama Dosen Calon Pembimbing & NIP
+   - Jenis Penelitian (Implementatif / Non-implementatif)
+   - Asal Judul (Usulan Sendiri / Usulan Pembimbing)
+   Jika data di atas belum lengkap, TANYAKAN LANGSUNG KEPADA PENGGUNA sebelum atau setelah membuat draf dokumen.
+
+2. Panggil tool `plan_proposal_research` dengan parameter topic='{topic}' untuk menurunkan rumusan masalah tunggal, variabel X, variabel Y, dan kata kunci pencarian literatur.
+3. Jika dibutuhkan bukti empiris/sitasi tambahan, gunakan MCP `paper-search` (seperti `search_papers`, `search_arxiv`, atau `search_semantic`).
+4. Panggil tool `generate_praproposal_from_topic` dengan menyertakan student_metadata yang telah dilengkapi.
+5. Laporkan kepada pengguna bahwa dokumen pra-proposal (.odt) telah berhasil dibuat dan konfirmasikan data identitas mahasiswa yang tercantum.
+"""
 
 @mcp.prompt()
 def auto_proposal_workflow(topic: str, csv_filename: str = "") -> str:
     """
     Panduan alur orkestrasi otomatis bagi asisten AI (Antigravity):
-    Meneliti literatur menggunakan paper-search MCP, mengolah CSV, dan menyusun proposal DOCX.
+    Menanyakan kelengkapan data mahasiswa, meneliti literatur via paper-search MCP, mengolah CSV, dan menyusun proposal DOCX.
     """
     return f"""Anda bertindak sebagai asisten akademis ahli untuk penyusunan proposal skripsi/tesis.
 Topik yang diberikan pengguna: "{topic}"
 Berkas CSV literatur di workspace: "{csv_filename or 'Tidak ada (gunakan paper-search)'}"
 
-Langkah-langkah yang harus dilakukan:
-1. Panggil tool `plan_proposal_research` dengan parameter topic='{topic}' untuk mendapatkan rumusan masalah, variabel X, variabel Y, dan kueri pencarian.
-2. Gunakan MCP `paper-search` (seperti `search_papers`, `search_arxiv`, atau `search_semantic`) dengan kueri yang dihasilkan untuk mencari 3-5 paper terkini yang relevan.
-3. Jika terdapat berkas CSV di workspace, gunakan `parse_literature_csv_data` untuk mengekstraksi data studi literatur.
-4. Panggil `generate_proposal_from_topic` dengan menyertakan topik, variabel X dan Y, berkas CSV, serta daftar paper hasil pencarian `retrieved_papers`.
-5. Periksa dokumen hasil menggunakan `inspect_proposal_document` dan sampaikan ringkasan struktur proposal serta hasil audit kepada pengguna.
+Langkah-langkah yang harus dilakukan oleh agen:
+1. PERIKSA INFORMASI MAHASISWA:
+   Periksa apakah pengguna sudah memberikan Nama Mahasiswa, NIM, Program Studi, Fakultas/Universitas, serta nama Dosen Pembimbing.
+   Jika belum lengkap, TANYAKAN LANGSUNG KEPADA PENGGUNA untuk melengkapi identitas resmi proposal.
+
+2. Panggil tool `plan_proposal_research` dengan parameter topic='{topic}' untuk mendapatkan rumusan masalah, variabel X, variabel Y, dan kueri pencarian.
+3. Gunakan MCP `paper-search` (seperti `search_papers`, `search_arxiv`, atau `search_semantic`) dengan kueri yang dihasilkan untuk mencari 3-5 paper terkini yang relevan.
+4. Jika terdapat berkas CSV di workspace, gunakan `parse_literature_csv_data` untuk mengekstraksi data studi literatur.
+5. Panggil `generate_proposal_from_topic` dengan menyertakan topik, variabel X dan Y, berkas CSV, daftar paper hasil pencarian `retrieved_papers`, serta `student_metadata`.
+6. Periksa dokumen hasil menggunakan `inspect_proposal_document` dan sampaikan ringkasan struktur proposal serta hasil audit kepatuhan kepada pengguna.
 """
 
 def main():

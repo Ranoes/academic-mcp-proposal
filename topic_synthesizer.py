@@ -84,11 +84,76 @@ def plan_research(
             "semantic_scholar": semantic_query,
             "crossref": f"{x_val} {y_val}"
         },
+        "required_student_information": {
+            "nama_mahasiswa": "Nama lengkap mahasiswa (wajib)",
+            "nim": "Nomor Induk Mahasiswa (wajib)",
+            "jurusan": "Jurusan (contoh: Teknik Informatika)",
+            "program_studi": "Program Studi (contoh: Teknik Informatika / Sistem Informasi / Teknik Komputer)",
+            "keminatan": "Keminatan / Kelompok Keahlian (contoh: Komputasi Cerdas, Rekayasa Perangkat Lunak, Jaringan)",
+            "bidang_skripsi": "Bidang kajian skripsi (contoh: Artificial Intelligence, Data Science, IoT)",
+            "nama_pembimbing": "Nama Dosen Calon Pembimbing beserta gelar",
+            "nip_pembimbing": "NIP Dosen Calon Pembimbing",
+            "jenis_penelitian": "Implementatif / Non-implementatif (default: Implementatif)",
+            "asal_judul": "Usulan Sendiri / Usulan Pembimbing (default: Usulan Sendiri)"
+        },
         "recommended_agent_workflow": [
-            "1. Jalankan paper-search MCP (search_papers, search_arxiv, search_semantic) menggunakan kueri di atas.",
-            "2. Jika terdapat file CSV tinjauan pustaka di workspace, baca menggunakan parse_literature_csv.",
-            "3. Panggil generate_proposal_from_topic dengan menggabungkan topic, CSV, dan paper hasil pencarian."
+            "1. Periksa apakah pengguna telah menyediakan data identitas mahasiswa (Nama, NIM, Dosen Pembimbing, dll.). Jika belum lengkap, tanyakan langsung kepada pengguna.",
+            "2. Jalankan paper-search MCP (search_papers, search_arxiv, search_semantic) menggunakan kueri di atas.",
+            "3. Jika terdapat file CSV tinjauan pustaka di workspace, baca menggunakan parse_literature_csv_data.",
+            "4. Panggil generate_praproposal_from_topic atau generate_proposal_from_topic dengan menyertakan student_metadata yang telah dilengkapi."
         ]
+    }
+
+def check_missing_student_metadata(
+    metadata: Optional[Dict[str, Any]] = None,
+    is_praproposal: bool = False
+) -> Dict[str, Any]:
+    """
+    Memeriksa kelengkapan metadata mahasiswa dan dosen.
+    Mengembalikan daftar field yang belum terisi atau masih berupa nilai default placeholder.
+    """
+    meta = metadata or {}
+    missing_fields: List[str] = []
+    
+    # Nilai-nilai placeholder default yang dianggap belum diisi pengguna
+    placeholders = [
+        "mahasiswa peneliti", "alex mercer", "test student", "[nama]",
+        "225150200111000", "std-2026-94821", "202612345", "[nim]",
+        "dr. mahrus ali, s.kom., m.kom.", "[nama dosen pembimbing]", "[dosen]"
+    ]
+
+    nama = str(meta.get("nama_mahasiswa", "")).strip()
+    if not nama or nama.lower() in placeholders:
+        missing_fields.append("nama_mahasiswa")
+
+    nim = str(meta.get("nim", "")).strip()
+    if not nim or nim.lower() in placeholders:
+        missing_fields.append("nim")
+
+    if is_praproposal:
+        pembimbing = str(meta.get("nama_pembimbing", "")).strip()
+        if not pembimbing or pembimbing.lower() in placeholders:
+            missing_fields.append("nama_pembimbing")
+            
+        keminatan = str(meta.get("keminatan", "")).strip()
+        if not keminatan:
+            missing_fields.append("keminatan")
+
+        bidang = str(meta.get("bidang_skripsi", "")).strip()
+        if not bidang:
+            missing_fields.append("bidang_skripsi")
+
+    is_complete = len(missing_fields) == 0
+
+    return {
+        "is_complete": is_complete,
+        "missing_fields": missing_fields,
+        "message": (
+            "Semua data identitas mahasiswa dan pembimbing telah lengkap."
+            if is_complete else
+            f"Terdapat informasi penting yang belum disediakan: {', '.join(missing_fields)}. "
+            "Agen disarankan untuk menanyakan data ini kepada pengguna agar dokumen resmi terisi dengan benar."
+        )
     }
 
 def synthesize_proposal_from_inputs(
@@ -282,3 +347,134 @@ def synthesize_proposal_from_inputs(
         "tabel_tinjauan_pustaka": tabel_tp,
         "daftar_referensi": final_refs
     }
+
+def synthesize_praproposal_from_inputs(
+    topic: str,
+    metadata: Dict[str, Any],
+    variabel_x: str,
+    variabel_y: str,
+    literature_records: Optional[List[Dict[str, Any]]] = None,
+    references: Optional[List[str]] = None,
+    latar_belakang_notes: Optional[List[str]] = None,
+    metode_notes: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """
+    Menyusun payload naskah pra-proposal skripsi (SA2-01A) secara otomatis:
+    - Metadata mahasiswa & judul penelitian
+    - Latar Belakang (<= 500 kata dengan sitasi)
+    - Landasan Kepustakaan (<= 250 kata)
+    - Rumusan Masalah (numbering)
+    - Metode yang digunakan (<= 250 kata)
+    - Daftar Pustaka
+    """
+    clean_topic = topic.strip()
+    
+    # Normalisasi Metadata Mahasiswa
+    mhs_meta = {
+        "nama_mahasiswa": metadata.get("nama_mahasiswa", ""),
+        "nim": metadata.get("nim", ""),
+        "jurusan": metadata.get("jurusan", "Teknik Informatika"),
+        "program_studi": metadata.get("program_studi", "Teknik Informatika"),
+        "keminatan": metadata.get("keminatan", "Komputasi Cerdas"),
+        "bidang_skripsi": metadata.get("bidang_skripsi", "Artificial Intelligence & Data Science"),
+        "jenis_penelitian": metadata.get("jenis_penelitian", "Implementatif"),
+        "tipe_penelitian": metadata.get("tipe_penelitian", "Pengembangan Sistem & Komparasi Algoritma"),
+        "asal_judul": metadata.get("asal_judul", "Usulan Sendiri"),
+        "judul": metadata.get("judul", clean_topic.upper()),
+        "lokasi": metadata.get("lokasi", "Malang"),
+        "tanggal_mahasiswa": metadata.get("tanggal_mahasiswa"),
+        "tanggal_pembimbing": metadata.get("tanggal_pembimbing"),
+        "nama_pembimbing": metadata.get("nama_pembimbing", "Dr. Mahrus Ali, S.Kom., M.Kom."),
+        "nip_pembimbing": metadata.get("nip_pembimbing", "-")
+    }
+
+    # 1. Latar Belakang (<= 500 kata)
+    lb_paragraphs = []
+    if latar_belakang_notes:
+        lb_paragraphs.extend(latar_belakang_notes)
+    else:
+        lb_paragraphs.append(
+            f"Perkembangan teknologi komputasi dan pengolahan data saat ini menuntut efisiensi serta akurasi yang semakin tinggi. "
+            f"Dalam lingkup topik penelitian '{clean_topic}', permasalahan terkait {variabel_y} merupakan tantangan utama "
+            f"yang dihadapi pada implementasi sistem di lapangan. Keterbatasan metode konvensional seringkali mengakibatkan "
+            f"penurunan performa dan efisiensi ketika dihadapkan pada skala data yang besar dan kondisi lingkungan yang dinamis."
+        )
+        if literature_records:
+            first_lit = literature_records[0]
+            auth = first_lit.get("peneliti") or first_lit.get("author") or "Penelitian sebelumnya"
+            year = first_lit.get("tahun") or first_lit.get("year") or "2024"
+            find = first_lit.get("temuan") or first_lit.get("findings") or f"analisis pada {variabel_y}"
+            lb_paragraphs.append(
+                f"Kajian oleh {auth} ({year}) menunjukkan bahwa {find}. Namun demikian, masih terdapat tantangan "
+                f"terkait optimasi integrasi algoritma adaptif untuk mengatasi disparitas kinerja tersebut."
+            )
+        lb_paragraphs.append(
+            f"Untuk mengatasi permasalahan tersebut, penelitian ini mengusulkan penerapan {variabel_x}. Pendekatan ini "
+            f"diharapkan mampu memberikan peningkatan signifikan terhadap performa {variabel_y} melalui pemodelan "
+            f"yang adaptif, presisi, dan teruji secara empiris."
+        )
+
+    # 2. Landasan Kepustakaan (<= 250 kata)
+    landasan_paragraphs = []
+    landasan_paragraphs.append(
+        f"Landasan kepustakaan penelitian ini bertumpu pada teori dan konsep dasar {variabel_x} serta karakteristik {variabel_y}. "
+        f"Prinsip fundamental dari {variabel_x} berfokus pada optimasi pengolahan informasi dan adaptasi model terhadap variasi fitur data."
+    )
+    if literature_records and len(literature_records) > 1:
+        lit_synth = []
+        for r in literature_records[:3]:
+            a = r.get("peneliti") or r.get("author") or "Studi terkait"
+            y = r.get("tahun") or r.get("year") or "2024"
+            m = r.get("metode") or r.get("method") or "metode komputasi"
+            lit_synth.append(f"{a} ({y}) yang menerapkan {m}")
+        landasan_paragraphs.append(
+            f"Sejumlah penelitian terdahulu yang mendasari kajian ini meliputi penelitian oleh {', serta oleh '.join(lit_synth)}. "
+            f"Studi-studi tersebut membuktikan kelayakan metode komputasi cerdas dalam mengoptimalkan performa sistem."
+        )
+    else:
+        landasan_paragraphs.append(
+            f"Kajian literatur terkini menunjukkan bahwa pemanfaatan algoritma berbasis data memberikan kestabilan yang lebih baik "
+            f"dibandingkan aturan heuristik statis dalam pengelolaan {variabel_y}."
+        )
+
+    # 3. Rumusan Masalah (numbering)
+    rm_list = [
+        f"Sejauh mana implementasi {variabel_x} mampu meningkatkan performa dan efektivitas {variabel_y} secara terukur dibandingkan dengan metode konvensional?"
+    ]
+
+    # 4. Metode (<= 250 kata)
+    metode_paragraphs = []
+    if metode_notes:
+        metode_paragraphs.extend(metode_notes)
+    else:
+        metode_paragraphs.append(
+            f"Metodologi penelitian dilaksanakan melalui empat tahapan utama: "
+            f"(1) Pengumpulan dan pra-pemrosesan data terkait {variabel_y}; "
+            f"(2) Perancangan dan pemodelan arsitektur {variabel_x}; "
+            f"(3) Implementasi model pada lingkungan eksperimen yang representatif; serta "
+            f"(4) Evaluasi kinerja kuantitatif menggunakan metrik akurasi, waktu komputasi, dan signifikansi peningkatan performa."
+        )
+
+    # 5. Daftar Pustaka
+    final_refs = references or []
+    if not final_refs and literature_records:
+        for r in literature_records:
+            cit = r.get("citation") or f"{r.get('author', 'Peneliti')}, {r.get('year', '2024')}. {r.get('title', clean_topic)}."
+            final_refs.append(cit)
+    if not final_refs:
+        final_refs = [
+            f"Goodfellow, I., Bengio, Y. & Courville, A., 2016. Deep Learning. MIT Press.",
+            f"Russell, S. & Norvig, P., 2020. Artificial Intelligence: A Modern Approach. 4th ed. Pearson."
+        ]
+
+    return {
+        "metadata": mhs_meta,
+        "sections": {
+            "latar_belakang": lb_paragraphs,
+            "landasan_kepustakaan": landasan_paragraphs,
+            "rumusan_masalah": rm_list,
+            "metode": metode_paragraphs,
+            "daftar_pustaka": final_refs
+        }
+    }
+

@@ -10,8 +10,9 @@
 
 ## 🌟 Key Features
 
-1. **One-Shot Topic-Driven Proposal Generation**:
+1. **One-Shot Topic-Driven Proposal & Pra-Proposal Generation**:
    - Generate publication-grade thesis proposals directly from a topic prompt (`generate_proposal_from_topic`).
+   - Generate official pre-proposal form documents (SA2-01A OpenDocument Text) directly from topic & literature (`generate_praproposal_from_topic`, `generate_academic_praproposal`).
    - Automatically derives independent ($X$) and dependent ($Y$) variables, formulates single measurable research questions, objectives, and theoretical frameworks.
 2. **CSV Literature Matrix Ingestion**:
    - Ingests literature review matrices or benchmark datasets directly from CSV files (`parse_literature_csv_data`).
@@ -20,7 +21,7 @@
    - Co-operates with external research MCPs such as `paper-search` (`search_arxiv`, `search_semantic`, `search_google_scholar`) and `go-docs`.
    - Derives targeted academic queries via `plan_proposal_research` and includes a registered prompt recipe (`auto_proposal_workflow`).
 4. **Self-Contained & Production-Ready**:
-   - Packaged with standard academic document styles, heading hierarchies, margins, and layout rules (FILKOM UB standard template).
+   - Packaged with standard academic document styles, heading hierarchies, margins, and layout rules (FILKOM UB standard template & SA2-01A ODT template).
    - Works out-of-the-box inside Docker with unbuffered stdio transport.
 5. **Automated Research Methodology Validation**:
    - Validates problem formulation rigor against custom quantitative research framework principles.
@@ -35,6 +36,8 @@
 
 | Tool | Description | Key Parameters |
 | :--- | :--- | :--- |
+| `generate_praproposal_from_topic` | One-shot generator for academic pre-proposal form (`.odt`, format SA2-01A) directly from topic, student metadata, CSV data, or paper-search results. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` |
+| `generate_academic_praproposal` | Assembles and generates a complete academic pre-proposal document (`.odt`, format SA2-01A). | `metadata`, `sections`, `output_filename` |
 | `generate_rubric_checklist_report` | Generates a comprehensive academic audit checklist report in Markdown format based on standard evaluation rubrics. | `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` |
 | `validate_canvas_compliance` | Validates research proposal rigor against standard academic research design principles. | `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `single_problem_only` |
 | `get_canvas_guidelines` | Retrieves the complete rubric and checklist for academic research design criteria. | *(none)* |
@@ -224,6 +227,36 @@ The server will automatically:
 5. Save the final `.docx` directly into your mounted workspace.
 
 ---
+
+## 📝 Sample Tool Invocation (`generate_praproposal_from_topic`)
+
+Generate an official pre-proposal form document (`.odt`, format SA2-01A) directly from a topic prompt:
+
+```json
+{
+  "topic": "Optimasi Deteksi Anomali Jaringan IoT Menggunakan Federated Learning",
+  "variabel_x": "Algoritma Federated Learning Terdistribusi",
+  "variabel_y": "Akurasi Deteksi dan Efisiensi Komunikasi Jaringan IoT",
+  "student_metadata": {
+    "nama_mahasiswa": "Alex Mercer",
+    "nim": "225150200111000",
+    "jurusan": "Teknik Informatika",
+    "program_studi": "Teknik Informatika",
+    "keminatan": "Komputasi Cerdas",
+    "bidang_skripsi": "Artificial Intelligence & Data Science",
+    "jenis_penelitian": "Implementatif",
+    "tipe_penelitian": "Pengembangan Sistem & Komparasi Algoritma",
+    "asal_judul": "Usulan Sendiri",
+    "lokasi": "Malang",
+    "nama_pembimbing": "Dr. Mahrus Ali, S.Kom., M.Kom.",
+    "nip_pembimbing": "-"
+  },
+  "output_filename": "Praproposal_Skripsi_SA2-01A.odt"
+}
+```
+
+---
+
 
 ## 📊 CSV Literature Format
 
