@@ -44,7 +44,8 @@
 | `plan_proposal_research` | Analyzes a topic to derive variables (X & Y), single research question, and search queries for `paper-search` MCP. | `topic`, `bidang_kajian`, `variabel_x`, `variabel_y` |
 | `parse_literature_csv_data` | Parses a literature review or benchmark CSV file from workspace into DOCX comparison table and references. | `csv_filename`, `csv_content` |
 | `inspect_proposal_document` | Analyzes the structural health of a proposal document (paragraph count, table count, sections, words, heading tree). | `filename` (default: `"Proposal Skripsi v1.0.docx"`) |
-| `increment_proposal_version` | Duplicates active proposal to an updated version and records changelog entries. | `current_version`, `new_version`, `changelog` |
+| `increment_proposal_version` | Duplicates active thesis proposal (.docx) to an updated version and records changelog entries in `version_history.json`. | `current_version`, `new_version`, `changelog` |
+| `increment_praproposal_version` | Duplicates active pre-proposal (.odt) to an updated version and records changelog entries in `version_history.json`. | `current_version`, `new_version`, `changelog`, `filename_prefix` |
 | `export_proposal_as_markdown` | Converts any DOCX proposal in the workspace into clean, structured Markdown. | `filename` |
 
 ---

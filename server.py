@@ -191,15 +191,73 @@ def increment_proposal_version(
         }
 
     shutil.copy2(src_file, dst_file)
-    record_status = record_version_change(WORKSPACE_DIR, current_version, new_version, changelog)
+    record_status = record_version_change(
+        workspace_dir=WORKSPACE_DIR,
+        from_version=current_version,
+        to_version=new_version,
+        notes=changelog,
+        doc_type="proposal",
+        filename=os.path.basename(dst_file)
+    )
 
     return {
         "status": "SUCCESS",
         "created_file": os.path.basename(dst_file),
         "source_file": os.path.basename(src_file),
+        "document_type": "proposal",
         "changelog": changelog,
         "log_status": record_status
     }
+
+@mcp.tool()
+def increment_praproposal_version(
+    current_version: str,
+    new_version: str,
+    changelog: str,
+    filename_prefix: str = "Praproposal Skripsi"
+) -> dict:
+    """
+    Menduplikasi versi aktif pra-proposal skripsi (.odt) ke versi baru dan mencatat riwayat perubahan ke version_history.json.
+    Contoh: current_version='v1.0', new_version='v1.1', changelog='Penyesuaian rumusan masalah tunggal dan metode riset'
+    """
+    c_ver = current_version if current_version.startswith("v") else f"v{current_version}"
+    n_ver = new_version if new_version.startswith("v") else f"v{new_version}"
+
+    # Cari file sumber baik format 'Praproposal Skripsi v1.0.odt' maupun nama kustom
+    src_file = os.path.join(WORKSPACE_DIR, f"{filename_prefix} {c_ver}.odt")
+    dst_file = os.path.join(WORKSPACE_DIR, f"{filename_prefix} {n_ver}.odt")
+
+    if not os.path.exists(src_file):
+        # Fallback jika nama file hanya 'Praproposal_Skripsi_v1.0.odt'
+        alt_src = os.path.join(WORKSPACE_DIR, f"{filename_prefix}_{c_ver}.odt")
+        if os.path.exists(alt_src):
+            src_file = alt_src
+            dst_file = os.path.join(WORKSPACE_DIR, f"{filename_prefix}_{n_ver}.odt")
+        else:
+            return {
+                "status": "ERROR",
+                "message": f"Berkas sumber pra-proposal {src_file} tidak ditemukan di workspace."
+            }
+
+    shutil.copy2(src_file, dst_file)
+    record_status = record_version_change(
+        workspace_dir=WORKSPACE_DIR,
+        from_version=c_ver,
+        to_version=n_ver,
+        notes=changelog,
+        doc_type="praproposal",
+        filename=os.path.basename(dst_file)
+    )
+
+    return {
+        "status": "SUCCESS",
+        "created_file": os.path.basename(dst_file),
+        "source_file": os.path.basename(src_file),
+        "document_type": "praproposal",
+        "changelog": changelog,
+        "log_status": record_status
+    }
+
 
 @mcp.tool()
 def export_proposal_as_markdown(filename: str = "Proposal Skripsi v1.0.docx") -> dict:
@@ -456,6 +514,14 @@ def generate_academic_praproposal(
             output_path=out_path,
             template_path=tpl_path
         )
+        record_version_change(
+            workspace_dir=WORKSPACE_DIR,
+            from_version="init",
+            to_version="v1.0",
+            notes="Pembuatan awal dokumen pra-proposal skripsi (SA2-01A)",
+            doc_type="praproposal",
+            filename=output_filename
+        )
         return {
             "status": "SUCCESS",
             "output_filename": output_filename,
@@ -587,6 +653,16 @@ def generate_praproposal_from_topic(
         sections=pra_payload["sections"],
         output_path=out_path,
         template_path=tpl_path
+    )
+
+    # Catat riwayat versi
+    record_version_change(
+        workspace_dir=WORKSPACE_DIR,
+        from_version="init",
+        to_version="v1.0",
+        notes=f"Pembuatan awal naskah pra-proposal untuk topik '{topic}'",
+        doc_type="praproposal",
+        filename=output_filename
     )
 
     meta_check = check_missing_student_metadata(student_metadata, is_praproposal=True)

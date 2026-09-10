@@ -546,7 +546,14 @@ def inspect_doc(docx_path: str) -> Dict[str, Any]:
         "tables_info": tables_info
     }
 
-def record_version_change(workspace_dir: str, from_version: str, to_version: str, notes: str) -> str:
+def record_version_change(
+    workspace_dir: str,
+    from_version: str,
+    to_version: str,
+    notes: str,
+    doc_type: str = "proposal",
+    filename: Optional[str] = None
+) -> str:
     log_file = os.path.join(workspace_dir, "version_history.json")
     history = []
     if os.path.exists(log_file):
@@ -558,12 +565,15 @@ def record_version_change(workspace_dir: str, from_version: str, to_version: str
 
     history.append({
         "timestamp": datetime.now().isoformat(),
+        "document_type": doc_type,
         "from_version": from_version,
         "to_version": to_version,
+        "filename": filename or (f"Praproposal Skripsi {to_version}.odt" if doc_type == "praproposal" else f"Proposal Skripsi {to_version}.docx"),
         "notes": notes
     })
 
     with open(log_file, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=2, ensure_ascii=False)
 
-    return f"Versi {to_version} berhasil dicatat di version_history.json."
+    return f"Versi {to_version} ({doc_type}) berhasil dicatat di version_history.json."
+
