@@ -76,7 +76,7 @@ Add the following entry to your MCP configuration file (e.g., `mcp_config.json` 
         "-i",
         "--rm",
         "-v",
-        "${workspaceFolder}:/workspace",
+        ".:/workspace",
         "academic-proposal-mcp:latest"
       ]
     }
@@ -84,7 +84,7 @@ Add the following entry to your MCP configuration file (e.g., `mcp_config.json` 
 }
 ```
 
-> **Note:** `${workspaceFolder}` automatically expands to your current project directory in Antigravity. If using other clients, replace `${workspaceFolder}` with your local path (e.g. `C:/Projects/MyThesis` or `/home/user/thesis`).
+> **Note:** `.:/workspace` otomatis memetakan direktori proyek yang sedang aktif dibuka di IDE ke dalam `/workspace` container Docker tanpa perlu menuliskan path absolut secara manual.
 
 ---
 
