@@ -87,20 +87,22 @@ def plan_research(
         "required_student_information": {
             "nama_mahasiswa": "Nama lengkap mahasiswa (wajib)",
             "nim": "Nomor Induk Mahasiswa (wajib)",
-            "jurusan": "Jurusan (contoh: Teknik Informatika)",
+            "departemen": "Departemen / Jurusan (contoh: Departemen Teknik Informatika)",
             "program_studi": "Program Studi (contoh: Teknik Informatika / Sistem Informasi / Teknik Komputer)",
             "keminatan": "Keminatan / Kelompok Keahlian (contoh: Komputasi Cerdas, Rekayasa Perangkat Lunak, Jaringan)",
             "bidang_skripsi": "Bidang kajian skripsi (contoh: Artificial Intelligence, Data Science, IoT)",
-            "nama_pembimbing": "Nama Dosen Calon Pembimbing beserta gelar",
-            "nip_pembimbing": "NIP Dosen Calon Pembimbing",
+            "nama_pembimbing": "Nama Dosen Calon Pembimbing beserta gelar lengkap (wajib)",
+            "nip_pembimbing": "NIP Dosen Calon Pembimbing (wajib)",
+            "lokasi": "Lokasi / Kota pengesahan (contoh: Malang)",
             "jenis_penelitian": "Implementatif / Non-implementatif (default: Implementatif)",
             "asal_judul": "Usulan Sendiri / Usulan Pembimbing (default: Usulan Sendiri)"
         },
         "recommended_agent_workflow": [
-            "1. Periksa apakah pengguna telah menyediakan data identitas mahasiswa (Nama, NIM, Dosen Pembimbing, dll.). Jika belum lengkap, tanyakan langsung kepada pengguna.",
+            "1. WAJIB: Tanyakan dan konfirmasi ulang data diri mahasiswa (Nama, NIM, Departemen, Program Studi, Dosen Pembimbing, NIP, Lokasi, dll.) kepada pengguna.",
             "2. Jalankan paper-search MCP (search_papers, search_arxiv, search_semantic) menggunakan kueri di atas.",
             "3. Jika terdapat file CSV tinjauan pustaka di workspace, baca menggunakan parse_literature_csv_data.",
-            "4. Panggil generate_praproposal_from_topic atau generate_proposal_from_topic dengan menyertakan student_metadata yang telah dilengkapi."
+            "4. Panggil generate_praproposal_from_topic atau generate_proposal_from_topic dengan menyertakan student_metadata yang telah dikonfirmasi.",
+            "5. Tampilkan checklist konfirmasi identitas dokumen kepada pengguna untuk verifikasi final."
         ]
     }
 
@@ -110,16 +112,18 @@ def check_missing_student_metadata(
 ) -> Dict[str, Any]:
     """
     Memeriksa kelengkapan metadata mahasiswa dan dosen.
-    Mengembalikan daftar field yang belum terisi atau masih berupa nilai default placeholder.
+    Mengembalikan daftar field yang belum terisi atau masih berupa nilai default placeholder,
+    serta checklist konfirmasi yang wajib ditampilkan oleh agen ke pengguna.
     """
     meta = metadata or {}
     missing_fields: List[str] = []
     
-    # Nilai-nilai placeholder default yang dianggap belum diisi pengguna
+    # Nilai-nilai placeholder default yang dianggap belum dikonfirmasi pengguna
     placeholders = [
         "mahasiswa peneliti", "alex mercer", "test student", "[nama]",
         "225150200111000", "std-2026-94821", "202612345", "[nim]",
-        "dr. mahrus ali, s.kom., m.kom.", "[nama dosen pembimbing]", "[dosen]"
+        "dr. mahrus ali, s.kom., m.kom.", "[nama dosen pembimbing]", "[dosen]",
+        "-", "[lokasi]"
     ]
 
     nama = str(meta.get("nama_mahasiswa", "")).strip()
@@ -130,11 +134,27 @@ def check_missing_student_metadata(
     if not nim or nim.lower() in placeholders:
         missing_fields.append("nim")
 
+    prodi = str(meta.get("program_studi", "")).strip()
+    if not prodi:
+        missing_fields.append("program_studi")
+
+    dept = str(meta.get("departemen") or meta.get("jurusan", "")).strip()
+    if not dept:
+        missing_fields.append("departemen")
+
+    pembimbing = str(meta.get("nama_pembimbing", "")).strip()
+    if not pembimbing or pembimbing.lower() in placeholders:
+        missing_fields.append("nama_pembimbing")
+
+    nip = str(meta.get("nip_pembimbing", "")).strip()
+    if not nip or nip in ["-", "NIP :-", "NIP: -"]:
+        missing_fields.append("nip_pembimbing")
+
+    lokasi = str(meta.get("lokasi", "")).strip()
+    if not lokasi or lokasi.lower() in ["[lokasi]"]:
+        missing_fields.append("lokasi")
+
     if is_praproposal:
-        pembimbing = str(meta.get("nama_pembimbing", "")).strip()
-        if not pembimbing or pembimbing.lower() in placeholders:
-            missing_fields.append("nama_pembimbing")
-            
         keminatan = str(meta.get("keminatan", "")).strip()
         if not keminatan:
             missing_fields.append("keminatan")
@@ -145,14 +165,29 @@ def check_missing_student_metadata(
 
     is_complete = len(missing_fields) == 0
 
+    confirmation_data = {
+        "nama_mahasiswa": meta.get("nama_mahasiswa", "- (perlu dikonfirmasi)"),
+        "nim": meta.get("nim", "- (perlu dikonfirmasi)"),
+        "departemen": meta.get("departemen") or meta.get("jurusan", "- (perlu dikonfirmasi)"),
+        "program_studi": meta.get("program_studi", "- (perlu dikonfirmasi)"),
+        "dosen_pembimbing": meta.get("nama_pembimbing", "- (perlu dikonfirmasi)"),
+        "nip_pembimbing": meta.get("nip_pembimbing", "- (perlu dikonfirmasi)"),
+        "lokasi": meta.get("lokasi", "Malang")
+    }
+    if is_praproposal:
+        confirmation_data["keminatan"] = meta.get("keminatan", "-")
+        confirmation_data["bidang_skripsi"] = meta.get("bidang_skripsi", "-")
+
     return {
         "is_complete": is_complete,
         "missing_fields": missing_fields,
+        "confirmation_checklist": confirmation_data,
+        "mandatory_action": "WAJIB: Agen harus mengonfirmasikan rincian data diri di atas (Nama, NIM, Departemen, Program Studi, Dosen Pembimbing, NIP, Lokasi) secara langsung kepada pengguna.",
         "message": (
-            "Semua data identitas mahasiswa dan pembimbing telah lengkap."
+            "Semua data identitas mahasiswa dan pembimbing telah terisi. Harap konfirmasikan kembali ke pengguna."
             if is_complete else
-            f"Terdapat informasi penting yang belum disediakan: {', '.join(missing_fields)}. "
-            "Agen disarankan untuk menanyakan data ini kepada pengguna agar dokumen resmi terisi dengan benar."
+            f"Terdapat informasi penting yang belum dikonfirmasi/disediakan: {', '.join(missing_fields)}. "
+            "WAJIB: Agen harus menanyakan dan mengonfirmasi data ini kepada pengguna agar dokumen resmi valid."
         )
     }
 
@@ -388,7 +423,7 @@ def synthesize_praproposal_from_inputs(
         "nip_pembimbing": metadata.get("nip_pembimbing", "-")
     }
 
-    # 1. Latar Belakang (<= 500 kata)
+    # 1. Latar Belakang (<= 500 kata, selaras Research Design Canvas LB01-LB04)
     lb_paragraphs = []
     if latar_belakang_notes:
         lb_paragraphs.extend(latar_belakang_notes)
@@ -414,7 +449,7 @@ def synthesize_praproposal_from_inputs(
             f"yang adaptif, presisi, dan teruji secara empiris."
         )
 
-    # 2. Landasan Kepustakaan (<= 250 kata)
+    # 2. Landasan Kepustakaan (<= 250 kata, selaras Research Design Canvas LR01-LR04)
     landasan_paragraphs = []
     landasan_paragraphs.append(
         f"Landasan kepustakaan penelitian ini bertumpu pada teori dan konsep dasar {variabel_x} serta karakteristik {variabel_y}. "
@@ -437,25 +472,25 @@ def synthesize_praproposal_from_inputs(
             f"dibandingkan aturan heuristik statis dalam pengelolaan {variabel_y}."
         )
 
-    # 3. Rumusan Masalah (numbering)
+    # 3. Rumusan Masalah (TETAP SATU & Kuantitatif/Komparatif Berorientasi Pengukuran sesuai CLB04-01 & CLB04-02)
     rm_list = [
-        f"Sejauh mana implementasi {variabel_x} mampu meningkatkan performa dan efektivitas {variabel_y} secara terukur dibandingkan dengan metode konvensional?"
+        f"Sejauh manakah implementasi {variabel_x} mampu meningkatkan efektivitas dan performa {variabel_y} secara signifikan dibandingkan dengan metode konvensional?"
     ]
 
-    # 4. Metode (<= 250 kata)
+    # 4. Metode yang Digunakan (<= 250 kata, selaras Research Design Canvas M01-M05: Alur 4 Tahap)
     metode_paragraphs = []
     if metode_notes:
         metode_paragraphs.extend(metode_notes)
     else:
         metode_paragraphs.append(
-            f"Metodologi penelitian dilaksanakan melalui empat tahapan utama: "
-            f"(1) Pengumpulan dan pra-pemrosesan data terkait {variabel_y}; "
-            f"(2) Perancangan dan pemodelan arsitektur {variabel_x}; "
-            f"(3) Implementasi model pada lingkungan eksperimen yang representatif; serta "
-            f"(4) Evaluasi kinerja kuantitatif menggunakan metrik akurasi, waktu komputasi, dan signifikansi peningkatan performa."
+            f"Metodologi penelitian dilaksanakan melalui empat tahapan terstruktur: "
+            f"(1) Pengumpulan dan pra-pemrosesan data representatif terkait {variabel_y}; "
+            f"(2) Perancangan, pemodelan, dan integrasi modul arsitektur {variabel_x}; "
+            f"(3) Skenario pengujian eksperimental komparatif terhadap metode baseline; serta "
+            f"(4) Evaluasi kinerja kuantitatif dan analisis signifikansi peningkatan performa {variabel_y}."
         )
 
-    # 5. Daftar Pustaka
+    # 5. Daftar Pustaka (Standar Harvard / IEEE)
     final_refs = references or []
     if not final_refs and literature_records:
         for r in literature_records:

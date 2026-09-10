@@ -157,17 +157,17 @@ def build_praproposal_odt(
     nama_mhs = metadata.get("nama_mahasiswa", "")
     nim_mhs = metadata.get("nim", "")
 
-    # Format Rumusan Masalah (numbering jika berupa list)
+    # Format Rumusan Masalah (TETAP SATU rumusan masalah sesuai Research Design Canvas CLB04-01)
     rm_raw = sections.get("rumusan_masalah", [])
     if isinstance(rm_raw, str):
         rm_lines = [l.strip() for l in rm_raw.split("\n") if l.strip()]
     else:
         rm_lines = list(rm_raw)
     
-    rm_formatted = []
-    for idx, item in enumerate(rm_lines, 1):
-        clean_item = re.sub(r'^\d+[\.\)]\s*', '', str(item)).strip()
-        rm_formatted.append(f"{idx}. {clean_item}")
+    # Ambil pertanyaan utama pertama untuk menjamin kepatuhan single problem formulation
+    primary_rm = rm_lines[0] if rm_lines else "Sejauh mana efektivitas implementasi metode yang diusulkan?"
+    clean_rm = re.sub(r'^\d+[\.\)]\s*', '', str(primary_rm)).strip()
+    rm_formatted = [f"1. {clean_rm}"]
 
     # Format Daftar Pustaka
     dp_raw = sections.get("daftar_pustaka", [])

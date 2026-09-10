@@ -608,50 +608,61 @@ def generate_praproposal_from_topic(
 def auto_praproposal_workflow(topic: str, csv_filename: str = "") -> str:
     """
     Panduan alur orkestrasi pembuatan pra-proposal skripsi (Form SA2-01A .odt) bagi asisten AI:
-    Menanyakan kelengkapan data mahasiswa, meneliti literatur, dan menghasilkan naskah pra-proposal.
+    Mewajibkan konfirmasi data diri mahasiswa/dosen, meneliti literatur, dan menghasilkan naskah pra-proposal.
     """
     return f"""Anda bertindak sebagai asisten akademis ahli untuk penyusunan Dokumen Pra-Proposal Skripsi (Form SA2-01A).
 Topik yang diajukan pengguna: "{topic}"
 Berkas CSV literatur di workspace: "{csv_filename or 'Tidak ada (gunakan paper-search jika diperlukan)'}"
 
-Langkah-langkah yang harus dilakukan oleh agen:
-1. PERIKSA INFORMASI MAHASISWA:
-   Periksa apakah pengguna sudah memberikan detail identitas:
-   - Nama Mahasiswa
+Langkah-langkah WAJIB yang harus dilakukan oleh agen:
+1. WAJIB KONFIRMASI DATA DIRI MAHASISWA & PEMBIMBING:
+   Agen WAJIB menanyakan dan mengonfirmasikan ulang data diri pengguna secara eksplisit:
+   - Nama Lengkap Mahasiswa
    - NIM
-   - Jurusan & Program Studi
-   - Keminatan & Bidang Skripsi
-   - Nama Dosen Calon Pembimbing & NIP
+   - Jurusan / Departemen (contoh: Teknik Informatika)
+   - Program Studi (contoh: Teknik Informatika / Sistem Informasi / Teknik Komputer)
+   - Keminatan & Bidang Skripsi (contoh: Komputasi Cerdas / Artificial Intelligence)
+   - Nama Dosen Pembimbing beserta gelar (contoh: Dr. Eng. Herman Tolle, S.T., M.T.)
+   - NIP Dosen Pembimbing
+   - Lokasi / Kota Pengesahan (default: Malang)
    - Jenis Penelitian (Implementatif / Non-implementatif)
    - Asal Judul (Usulan Sendiri / Usulan Pembimbing)
-   Jika data di atas belum lengkap, TANYAKAN LANGSUNG KEPADA PENGGUNA sebelum atau setelah membuat draf dokumen.
+   Jika data di atas belum diberikan atau belum lengkap, AJUKAN PERTANYAAN LANGSUNG KEPADA PENGGUNA sebelum atau setelah membuat dokumen.
 
 2. Panggil tool `plan_proposal_research` dengan parameter topic='{topic}' untuk menurunkan rumusan masalah tunggal, variabel X, variabel Y, dan kata kunci pencarian literatur.
 3. Jika dibutuhkan bukti empiris/sitasi tambahan, gunakan MCP `paper-search` (seperti `search_papers`, `search_arxiv`, atau `search_semantic`).
-4. Panggil tool `generate_praproposal_from_topic` dengan menyertakan student_metadata yang telah dilengkapi.
-5. Laporkan kepada pengguna bahwa dokumen pra-proposal (.odt) telah berhasil dibuat dan konfirmasikan data identitas mahasiswa yang tercantum.
+4. Panggil tool `generate_praproposal_from_topic` dengan menyertakan student_metadata yang telah dikonfirmasi.
+5. WAJIB TAMPILKAN CHECKLIST KONFIRMASI: Sajikan tabel ringkasan data diri yang tercantum di dokumen (.odt) kepada pengguna untuk verifikasi final.
 """
 
 @mcp.prompt()
 def auto_proposal_workflow(topic: str, csv_filename: str = "") -> str:
     """
     Panduan alur orkestrasi otomatis bagi asisten AI (Antigravity):
-    Menanyakan kelengkapan data mahasiswa, meneliti literatur via paper-search MCP, mengolah CSV, dan menyusun proposal DOCX.
+    Mewajibkan konfirmasi data diri mahasiswa/dosen, meneliti literatur via paper-search MCP, mengolah CSV, dan menyusun proposal DOCX.
     """
-    return f"""Anda bertindak sebagai asisten akademis ahli untuk penyusunan proposal skripsi/tesis.
+    return f"""Anda bertindak sebagai asisten akademis ahli untuk penyusunan proposal skripsi/tesis (3 Bab).
 Topik yang diberikan pengguna: "{topic}"
 Berkas CSV literatur di workspace: "{csv_filename or 'Tidak ada (gunakan paper-search)'}"
 
-Langkah-langkah yang harus dilakukan oleh agen:
-1. PERIKSA INFORMASI MAHASISWA:
-   Periksa apakah pengguna sudah memberikan Nama Mahasiswa, NIM, Program Studi, Fakultas/Universitas, serta nama Dosen Pembimbing.
-   Jika belum lengkap, TANYAKAN LANGSUNG KEPADA PENGGUNA untuk melengkapi identitas resmi proposal.
+Langkah-langkah WAJIB yang harus dilakukan oleh agen:
+1. WAJIB KONFIRMASI DATA DIRI MAHASISWA & PEMBIMBING:
+   Agen WAJIB menanyakan dan mengonfirmasikan ulang data diri pengguna secara eksplisit:
+   - Nama Lengkap Mahasiswa
+   - NIM
+   - Departemen / Jurusan
+   - Program Studi
+   - Fakultas & Universitas
+   - Nama Dosen Pembimbing beserta gelar
+   - NIP Dosen Pembimbing
+   - Lokasi / Kota Pengesahan & Tahun
+   Jika data di atas belum diberikan atau belum lengkap, AJUKAN PERTANYAAN LANGSUNG KEPADA PENGGUNA.
 
-2. Panggil tool `plan_proposal_research` dengan parameter topic='{topic}' untuk mendapatkan rumusan masalah, variabel X, variabel Y, dan kueri pencarian.
+2. Panggil tool `plan_proposal_research` dengan parameter topic='{topic}' untuk mendapatkan rumusan masalah tunggal, variabel X, variabel Y, dan kueri pencarian.
 3. Gunakan MCP `paper-search` (seperti `search_papers`, `search_arxiv`, atau `search_semantic`) dengan kueri yang dihasilkan untuk mencari 3-5 paper terkini yang relevan.
 4. Jika terdapat berkas CSV di workspace, gunakan `parse_literature_csv_data` untuk mengekstraksi data studi literatur.
-5. Panggil `generate_proposal_from_topic` dengan menyertakan topik, variabel X dan Y, berkas CSV, daftar paper hasil pencarian `retrieved_papers`, serta `student_metadata`.
-6. Periksa dokumen hasil menggunakan `inspect_proposal_document` dan sampaikan ringkasan struktur proposal serta hasil audit kepatuhan kepada pengguna.
+5. Panggil `generate_proposal_from_topic` dengan menyertakan topik, variabel X dan Y, berkas CSV, daftar paper hasil pencarian `retrieved_papers`, serta `student_metadata` yang telah dikonfirmasi.
+6. Periksa dokumen hasil menggunakan `inspect_proposal_document` dan sampaikan ringkasan struktur proposal, hasil audit kepatuhan Research Canvas, serta konfirmasi data identitas mahasiswa kepada pengguna.
 """
 
 def main():

@@ -10,22 +10,20 @@
 
 ## 🌟 Key Features
 
-1. **One-Shot Topic-Driven Proposal & Pra-Proposal Generation**:
-   - Generate publication-grade thesis proposals directly from a topic prompt (`generate_proposal_from_topic`).
-   - Generate official pre-proposal form documents (SA2-01A OpenDocument Text) directly from topic & literature (`generate_praproposal_from_topic`, `generate_academic_praproposal`).
-   - Automatically derives independent ($X$) and dependent ($Y$) variables, formulates single measurable research questions, objectives, and theoretical frameworks.
-2. **CSV Literature Matrix Ingestion**:
+1. **Dual Document Support (Proposal `.docx` & Pra-Proposal `.odt`)**:
+   - **Thesis Proposal (3 Chapters DOCX)**: Full academic proposal adhering to official institutional formatting (`generate_proposal_from_topic`, `generate_academic_proposal`).
+   - **Pre-Proposal Form (SA2-01A ODT)**: Standard institutional pre-proposal document (`generate_praproposal_from_topic`, `generate_academic_praproposal`).
+2. **Strict Research Design Canvas Alignment**:
+   - Strictly enforces **1 Single Measurable Problem Question** (`CLB04-01` & `CLB04-02`), eliminating open-ended or descriptive phrasing.
+   - Automatically defines explicit Independent ($X$) and Dependent ($Y$) variables, aligns linear objectives, and verifies actionable stakeholder benefits.
+3. **Mandatory Personal Data Re-Confirmation Workflow**:
+   - Ensures student and supervisor details (*Nama Mahasiswa, NIM, Departemen/Jurusan, Program Studi, Keminatan, Bidang Skripsi, Dosen Pembimbing, NIP, Lokasi*) are explicitly verified and confirmed before and after document generation.
+4. **CSV Literature Matrix Ingestion**:
    - Ingests literature review matrices or benchmark datasets directly from CSV files (`parse_literature_csv_data`).
-   - Automatically builds Word comparison tables (`tabel_tinjauan_pustaka`) and Harvard-style bibliographies.
-3. **Multi-MCP Research Coordination**:
-   - Co-operates with external research MCPs such as `paper-search` (`search_arxiv`, `search_semantic`, `search_google_scholar`) and `go-docs`.
-   - Derives targeted academic queries via `plan_proposal_research` and includes a registered prompt recipe (`auto_proposal_workflow`).
-4. **Self-Contained & Production-Ready**:
-   - Packaged with standard academic document styles, heading hierarchies, margins, and layout rules (FILKOM UB standard template & SA2-01A ODT template).
-   - Works out-of-the-box inside Docker with unbuffered stdio transport.
-5. **Automated Research Methodology Validation**:
-   - Validates problem formulation rigor against custom quantitative research framework principles.
-   - Eliminates generic or circular phrasing in objectives and stakeholder benefits.
+   - Automatically builds comparison matrices and Harvard/IEEE bibliographies.
+5. **Multi-MCP Research Coordination**:
+   - Seamlessly interoperates with external research MCPs such as `paper-search` (`search_arxiv`, `search_semantic`, `search_google_scholar`) and `go-docs`.
+   - Derives targeted academic queries via `plan_proposal_research` and includes registered prompt workflows (`auto_praproposal_workflow`, `auto_proposal_workflow`).
 6. **Iterative Version Tracking & Markdown Exporting**:
    - Facilitates document versioning (`v1.0` $\rightarrow$ `v1.1` $\rightarrow$ `v2.0`) with automated changelog recording in `version_history.json`.
    - Extracts DOCX proposals into clean Markdown for LLM analysis.
@@ -284,10 +282,11 @@ Columns detected:
 
 If you have [`paper-search-mcp`](https://github.com/modelcontextprotocol/servers) installed alongside `academic-proposal-mcp`:
 
-1. **Plan Queries**: Call `plan_proposal_research(topic="...")` to derive search queries optimized for ArXiv, Google Scholar, and Semantic Scholar.
-2. **Retrieve Papers**: Run `paper-search` tools (`search_arxiv`, `search_semantic`, etc.).
-3. **Assemble Proposal**: Pass the search results into `generate_proposal_from_topic(topic="...", retrieved_papers=...)`.
-4. **Prompt Automation**: Use the built-in MCP prompt `auto_proposal_workflow` in Antigravity or your AI client to execute the entire sequence automatically.
+1. **Verify & Confirm Data**: Ensure student and supervisor personal information (*Nama, NIM, Departemen, Program Studi, Dosen Pembimbing, NIP, Lokasi*) is collected.
+2. **Plan Queries**: Call `plan_proposal_research(topic="...")` to derive search queries optimized for ArXiv, Google Scholar, and Semantic Scholar.
+3. **Retrieve Papers**: Run `paper-search` tools (`search_arxiv`, `search_semantic`, etc.).
+4. **Assemble Document**: Pass search results into `generate_praproposal_from_topic(...)` for Pre-Proposal (`.odt`) or `generate_proposal_from_topic(...)` for Thesis Proposal (`.docx`).
+5. **Prompt Automation**: Use the built-in MCP prompts (`auto_praproposal_workflow` or `auto_proposal_workflow`) in Antigravity or your AI client to execute the entire research and assembly workflow automatically.
 
 ---
 
