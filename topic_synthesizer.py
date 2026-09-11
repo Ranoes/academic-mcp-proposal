@@ -79,10 +79,12 @@ def plan_research(
         "tujuan_umum": tujuan_umum,
         "tujuan_khusus": tujuan_khusus,
         "search_queries_for_paper_search": {
+            "search_papers": f"{x_val} {y_val}",
             "arxiv": arxiv_query,
             "google_scholar": scholar_query,
             "semantic_scholar": semantic_query,
-            "crossref": f"{x_val} {y_val}"
+            "crossref": f"{x_val} {y_val}",
+            "scihub_mirror_recommendation": "https://sci-hub.ren"
         },
         "required_student_information": {
             "nama_mahasiswa": "Nama lengkap mahasiswa (wajib)",
@@ -99,9 +101,9 @@ def plan_research(
         },
         "recommended_agent_workflow": [
             "1. WAJIB: Tanyakan dan konfirmasi ulang data diri mahasiswa (Nama, NIM, Departemen, Program Studi, Dosen Pembimbing, NIP, Lokasi, dll.) kepada pengguna.",
-            "2. Jalankan paper-search MCP (search_papers, search_arxiv, search_semantic) menggunakan kueri di atas.",
+            "2. Jalankan paper-search MCP (search_papers, search_arxiv, search_semantic, atau download_scihub bila membutuhkan naskah lengkap paywalled) menggunakan kueri di atas.",
             "3. Jika terdapat file CSV tinjauan pustaka di workspace, baca menggunakan parse_literature_csv_data.",
-            "4. Panggil generate_praproposal_from_topic atau generate_proposal_from_topic dengan menyertakan student_metadata yang telah dikonfirmasi.",
+            "4. Panggil generate_praproposal_from_topic atau generate_proposal_from_topic dengan menyertakan daftar paper hasil pencarian retrieved_papers dan student_metadata yang telah dikonfirmasi.",
             "5. Tampilkan checklist konfirmasi identitas dokumen kepada pengguna untuk verifikasi final."
         ]
     }

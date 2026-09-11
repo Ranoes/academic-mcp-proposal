@@ -335,6 +335,82 @@ def parse_literature_csv_data(
         file_p = os.path.join(WORKSPACE_DIR, csv_filename)
     return parse_literature_csv(file_path=file_p, csv_content=csv_content)
 
+def _normalize_retrieved_papers(retrieved_papers: Any) -> List[Dict[str, Any]]:
+    """
+    Menstandardisasi daftar paper dari MCP paper-search (baik dari search_papers,
+    search_arxiv, search_semantic, search_crossref, dsb.) menjadi format terstruktur
+    yang siap disintesis ke dalam tabel tinjauan pustaka dan daftar pustaka.
+    """
+    if not retrieved_papers:
+        return []
+    
+    # Tangani jika caller mem-passing seluruh objek dict response dari search_papers
+    if isinstance(retrieved_papers, dict):
+        if "papers" in retrieved_papers and isinstance(retrieved_papers["papers"], list):
+            retrieved_papers = retrieved_papers["papers"]
+        elif "results" in retrieved_papers and isinstance(retrieved_papers["results"], list):
+            retrieved_papers = retrieved_papers["results"]
+        else:
+            retrieved_papers = [retrieved_papers]
+    elif not isinstance(retrieved_papers, list):
+        return []
+
+    normalized = []
+    for p in retrieved_papers:
+        if not isinstance(p, dict):
+            continue
+        title = p.get("title") or "Paper Referensi"
+        
+        # 1. Format penulis akademis (mendukung nama string dengan pemisah titik koma / list)
+        authors = p.get("authors") or p.get("author") or "Peneliti Terkait"
+        if isinstance(authors, str) and ";" in authors:
+            author_list = [a.strip() for a in authors.split(";") if a.strip()]
+            if len(author_list) > 2:
+                authors = f"{author_list[0]} et al."
+            elif len(author_list) == 2:
+                authors = f"{author_list[0]} & {author_list[1]}"
+            elif author_list:
+                authors = author_list[0]
+        elif isinstance(authors, list):
+            if len(authors) > 2:
+                authors = f"{authors[0]} et al."
+            elif len(authors) == 2:
+                authors = f"{authors[0]} & {authors[1]}"
+            elif authors:
+                authors = str(authors[0])
+        
+        # 2. Ekstrak tahun publikasi (mendukung published_date, published, year)
+        raw_year = p.get("year") or p.get("published_date") or p.get("published") or ""
+        year = str(raw_year)[:4] if raw_year else "2024"
+        
+        # 3. Metode dan Temuan
+        categories = p.get("categories") or ""
+        method = p.get("method") or p.get("snippet") or (f"Kategori/Bidang: {categories}" if categories else "-")
+        
+        results = p.get("results") or p.get("abstract") or "-"
+        if results != "-" and len(results) > 250:
+            first_sentence = results.split(". ")[0]
+            if len(first_sentence) > 30 and len(first_sentence) < 250:
+                results = first_sentence + "."
+            else:
+                results = results[:247] + "..."
+        
+        gap = p.get("gap") or "Perlu evaluasi komprehensif pada skala data produksi dan variasi parameter pengujian"
+        doi = p.get("doi") or ""
+        url = p.get("url") or p.get("pdf_url") or ""
+        
+        normalized.append({
+            "title": title,
+            "authors": str(authors),
+            "year": year,
+            "method": str(method)[:150],
+            "results": str(results)[:200],
+            "gap": gap,
+            "doi": doi,
+            "url": url
+        })
+    return normalized
+
 @mcp.tool()
 def generate_proposal_from_topic(
     topic: str,
@@ -390,46 +466,46 @@ def generate_proposal_from_topic(
 
     # 4. Tambahkan data dari retrieved_papers (hasil paper-search MCP)
     if retrieved_papers:
-        if not table_matrix:
-            table_matrix = [["No", "Peneliti & Tahun", "Judul Penelitian", "Metode / Algoritma", "Hasil & Temuan", "Research Gap"]]
-        
-        current_no = len(table_matrix)
-        for p in retrieved_papers:
-            title = p.get("title", f"Paper Studi {current_no}")
-            authors = p.get("authors") or p.get("author") or "Peneliti Terkait"
-            if isinstance(authors, list):
-                authors = ", ".join(authors[:2]) + (" et al." if len(authors) > 2 else "")
-            year = str(p.get("year") or p.get("published") or "2024")[:4]
-            method = p.get("method") or p.get("snippet") or "-"
-            results = p.get("results") or p.get("abstract") or "-"
-            gap = p.get("gap") or "Perlu eksplorasi performa pada skenario lanjutan"
+        clean_papers = _normalize_retrieved_papers(retrieved_papers)
+        if clean_papers:
+            if not table_matrix:
+                table_matrix = [["No", "Peneliti & Tahun", "Judul Penelitian", "Metode / Algoritma", "Hasil & Temuan", "Research Gap"]]
+            
+            current_no = len(table_matrix)
+            for p in clean_papers:
+                title = p["title"]
+                authors = p["authors"]
+                year = p["year"]
+                method = p["method"]
+                results = p["results"]
+                gap = p["gap"]
 
-            records.append({
-                "no": current_no,
-                "author": str(authors),
-                "year": year,
-                "title": title,
-                "method": str(method)[:150],
-                "results": str(results)[:200],
-                "gap": gap
-            })
+                records.append({
+                    "no": current_no,
+                    "author": authors,
+                    "year": year,
+                    "title": title,
+                    "method": method,
+                    "results": results,
+                    "gap": gap
+                })
 
-            table_matrix.append([
-                str(current_no),
-                f"{authors} ({year})",
-                title,
-                str(method)[:120],
-                str(results)[:150],
-                str(gap)[:120]
-            ])
+                table_matrix.append([
+                    str(current_no),
+                    f"{authors} ({year})",
+                    title,
+                    method[:120],
+                    results[:150],
+                    gap[:120]
+                ])
 
-            ref_str = f"{authors}, {year}. {title}."
-            if p.get("doi"):
-                ref_str += f" DOI: {p.get('doi')}."
-            elif p.get("url"):
-                ref_str += f" Tersedia di: {p.get('url')}."
-            references.append(ref_str)
-            current_no += 1
+                ref_str = f"{authors}, {year}. {title}."
+                if p.get("doi"):
+                    ref_str += f" DOI: {p['doi']}."
+                elif p.get("url"):
+                    ref_str += f" Tersedia di: {p['url']}."
+                references.append(ref_str)
+                current_no += 1
 
     # 5. Sintesis konten proposal
     proposal_content = synthesize_proposal_from_inputs(
@@ -591,30 +667,29 @@ def generate_praproposal_from_topic(
 
     # 4. Tambahkan data dari retrieved_papers (hasil paper-search MCP)
     if retrieved_papers:
-        for p in retrieved_papers:
-            title = p.get("title", "Paper Referensi")
-            authors = p.get("authors") or p.get("author") or "Peneliti Terkait"
-            if isinstance(authors, list):
-                authors = ", ".join(authors[:2]) + (" et al." if len(authors) > 2 else "")
-            year = str(p.get("year") or p.get("published") or "2024")[:4]
-            method = p.get("method") or p.get("snippet") or "-"
-            results = p.get("results") or p.get("abstract") or "-"
-            gap = p.get("gap") or "Perlu optimasi kinerja pada skala data nyata"
+        clean_papers = _normalize_retrieved_papers(retrieved_papers)
+        for p in clean_papers:
+            title = p["title"]
+            authors = p["authors"]
+            year = p["year"]
+            method = p["method"]
+            results = p["results"]
+            gap = p["gap"]
 
             records.append({
-                "author": str(authors),
+                "author": authors,
                 "year": year,
                 "title": title,
-                "method": str(method)[:150],
-                "results": str(results)[:200],
+                "method": method,
+                "results": results,
                 "gap": gap
             })
 
             ref_str = f"{authors}, {year}. {title}."
             if p.get("doi"):
-                ref_str += f" DOI: {p.get('doi')}."
+                ref_str += f" DOI: {p['doi']}."
             elif p.get("url"):
-                ref_str += f" Tersedia di: {p.get('url')}."
+                ref_str += f" Tersedia di: {p['url']}."
             references.append(ref_str)
 
     # 5. Sintesis konten pra-proposal
