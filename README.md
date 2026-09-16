@@ -39,7 +39,7 @@
 | `generate_praproposal_from_topic` | One-shot generator for academic pre-proposal form (`.odt`, format SA2-01A) directly from topic, student metadata, CSV data, or paper-search results with automatic Canvas validation. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` |
 | `generate_academic_praproposal` | Assembles and generates a complete academic pre-proposal document (`.odt`, format SA2-01A) with automated Canvas compliance auditing. | `metadata`, `sections`, `output_filename` |
 | `validate_praproposal_compliance` | Validates pre-proposal form (SA2-01A) rigor against standard research canvas and word count budget limits (Latar Belakang <= 500w, Landasan Kepustakaan <= 250w, Metode <= 250w). | `metadata`, `sections`, `odt_filename`, `variabel_independen`, `variabel_dependen`, `single_problem_only` |
-| `generate_praproposal_rubric_checklist_report` | Generates a comprehensive pre-proposal audit checklist report in Markdown format based on institutional SA2-01A rules and Canvas rubrics. | `proposal_title`, `student_name`, `student_id`, `metadata`, `sections`, `odt_filename`, `variabel_independen`, `variabel_dependen`, `output_markdown_filename` |
+| `generate_praproposal_rubric_report` | Generates a comprehensive pre-proposal audit checklist report in Markdown format based on institutional SA2-01A rules and Canvas rubrics. | `proposal_title`, `student_name`, `student_id`, `metadata`, `sections`, `odt_filename`, `variabel_independen`, `variabel_dependen`, `output_markdown_filename` |
 | `validate_canvas_compliance` | Validates research proposal rigor against standard academic research design principles. | `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `single_problem_only` |
 | `generate_rubric_checklist_report` | Generates a comprehensive academic audit checklist report in Markdown format based on standard evaluation rubrics. | `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` |
 | `get_canvas_guidelines` | Retrieves the complete rubric and checklist for academic research design criteria (Chapter 1-3 & SA2-01A). | *(none)* |
@@ -221,7 +221,7 @@ Validates pre-proposals against Research Canvas rules and strict SA2-01A word-co
 Generates a comprehensive Markdown audit report for the 3-Chapter Proposal across 17 rubric criteria (Chapter 1 `LB01-LB06`, Chapter 2 `LR01-LR06`, Chapter 3 `M01-M05`).
 - **Parameters**: `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` (default: `"proposal_rubric_checklist_report.md"`)
 
-#### D. `generate_praproposal_rubric_checklist_report` (Pre-Proposal SA2-01A Audit Report)
+#### D. `generate_praproposal_rubric_report` (Pre-Proposal SA2-01A Audit Report)
 Generates an audit checklist Markdown report specifically for Form SA2-01A, featuring a dedicated **Word Count Budget Analysis** table and itemized criteria verification.
 - **Parameters**: `proposal_title` (opt), `student_name` (opt), `student_id` (opt), `metadata` (dict, opt), `sections` (dict, opt), `odt_filename` (opt), `variabel_independen` (opt), `variabel_dependen` (opt), `output_markdown_filename` (default: `"praproposal_rubric_checklist_report.md"`)
 

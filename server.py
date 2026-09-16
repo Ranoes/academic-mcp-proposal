@@ -195,7 +195,7 @@ def validate_praproposal_compliance(
     )
 
 @mcp.tool()
-def generate_praproposal_rubric_checklist_report(
+def generate_praproposal_rubric_report(
     proposal_title: Optional[str] = None,
     student_name: Optional[str] = None,
     student_id: Optional[str] = None,
