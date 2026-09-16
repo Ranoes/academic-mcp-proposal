@@ -11,14 +11,16 @@ requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.2.0,<2.0.0",
     "python-docx>=1.1.0",
-    "pydantic>=2.0.0"
+    "pydantic>=2.0.0",
+    "matplotlib>=3.7.0",
+    "pillow>=10.0.0"
 ]
 
 [project.scripts]
 academic-proposal-mcp = "server:main"
 
 [tool.setuptools]
-py-modules = ["server", "builder_engine", "canvas_validator", "csv_ingestor", "topic_synthesizer", "praproposal_builder"]
+py-modules = ["server", "builder_engine", "canvas_validator", "csv_ingestor", "topic_synthesizer", "praproposal_builder", "diagram_generator"]
 
 [tool.setuptools.package-data]
 "*" = ["assets/**/*"]

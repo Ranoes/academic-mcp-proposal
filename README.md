@@ -34,6 +34,8 @@
 
 | Tool | Description | Key Parameters |
 | :--- | :--- | :--- |
+| `generate_diagram_image` | Generates high-resolution academic diagrams (Flowchart, Conceptual Framework, Layered Architecture), ensures `/asset` folder exists, and optionally embeds into target DOCX. | `diagram_type`, `title`, `steps_or_nodes`, `variabel_x`, `variabel_y`, `asset_folder`, `target_document_docx` |
+| `insert_diagram_to_document` | Inserts an existing diagram image from `/asset` into a proposal DOCX with official caption numbering (`Gambar X.Y <Judul>`). | `document_filename`, `image_filename_or_path`, `caption_title`, `chapter_num`, `figure_num` |
 | `generate_praproposal_from_topic` | One-shot generator for academic pre-proposal form (`.odt`, format SA2-01A) directly from topic, student metadata, CSV data, or paper-search results with automatic Canvas validation. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` |
 | `generate_academic_praproposal` | Assembles and generates a complete academic pre-proposal document (`.odt`, format SA2-01A) with automated Canvas compliance auditing. | `metadata`, `sections`, `output_filename` |
 | `validate_praproposal_compliance` | Validates pre-proposal form (SA2-01A) rigor against standard research canvas and word count budget limits (Latar Belakang <= 500w, Landasan Kepustakaan <= 250w, Metode <= 250w). | `metadata`, `sections`, `odt_filename`, `variabel_independen`, `variabel_dependen`, `single_problem_only` |
@@ -42,7 +44,7 @@
 | `generate_rubric_checklist_report` | Generates a comprehensive academic audit checklist report in Markdown format based on standard evaluation rubrics. | `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` |
 | `get_canvas_guidelines` | Retrieves the complete rubric and checklist for academic research design criteria (Chapter 1-3 & SA2-01A). | *(none)* |
 | `generate_academic_proposal` | Assembles and generates a complete, publication-grade academic proposal DOCX file. | `metadata`, `bab1_data`, `bab2_subbab`, `bab3_subbab`, `daftar_referensi`, `output_filename` |
-| `generate_proposal_from_topic` | One-shot proposal generator combining research topic, CSV literature data, and paper-search results. | `topic`, `variabel_x`, `variabel_y`, `csv_filename`, `retrieved_papers`, `output_filename` |
+| `generate_proposal_from_topic` | One-shot proposal generator combining research topic, CSV literature data, and paper-search results with automatic research flowchart rendering. | `topic`, `variabel_x`, `variabel_y`, `csv_filename`, `retrieved_papers`, `output_filename` |
 | `plan_proposal_research` | Analyzes a topic to derive variables (X & Y), single research question, and search queries for `paper-search` MCP. | `topic`, `bidang_kajian`, `variabel_x`, `variabel_y` |
 | `parse_literature_csv_data` | Parses a literature review or benchmark CSV file from workspace into DOCX comparison table and references. | `csv_filename`, `csv_content` |
 | `inspect_proposal_document` | Analyzes the structural health and word count budget of proposal documents (`.docx` or `.odt`). | `filename` (default: `"Proposal Skripsi v1.0.docx"`) |
@@ -261,6 +263,50 @@ Analyzes a topic to derive variables $X$ & $Y$, a single measurable research que
 Parses a CSV literature matrix into a formatted comparison table (`tabel_tinjauan_pustaka`), narrative summaries for Chapter 2, and standard Harvard/IEEE citations.
 - **Parameters**: `csv_filename` (str, opt), `csv_content` (str, opt)
 
+---
+
+### 🖼️ 5. Diagram Generation & Asset Management Tools
+
+#### A. `generate_diagram_image`
+Generates high-resolution academic vector/raster diagrams (300 DPI), automatically ensures the `/asset` workspace directory exists, saves the PNG file, and can optionally insert it directly into a target `.docx` proposal.
+- **Supported Diagram Types**:
+  - `"flowchart"`: Multi-stage vertical research workflow diagram (`Tahap 1`, `Tahap 2`, ...).
+  - `"conceptual_framework"`: Causal variable relationship diagram ($X \rightarrow \text{Treatment} \rightarrow Y$).
+  - `"architecture"`: Layered system/software architecture block diagram.
+- **Parameters**: `diagram_type` (str), `title` (str), `steps_or_nodes` (list, opt), `variabel_x` (str, opt), `variabel_y` (str, opt), `layers` (list, opt), `asset_folder` (str, default: `"asset"`), `output_filename` (str, opt), `target_document_docx` (str, opt), `chapter_num` (int, default: `3`), `figure_num` (int, default: `1`)
+- **Example Payload**:
+  ```json
+  {
+    "diagram_type": "flowchart",
+    "title": "Diagram Alur Pelaksanaan Penelitian",
+    "steps_or_nodes": [
+      "Tahap 1: Identifikasi Masalah Konsumsi Energi WSN",
+      "Tahap 2: Studi Literatur Protokol Routing",
+      "Tahap 3: Perancangan Model Q-Routing",
+      "Tahap 4: Implementasi & Pengujian Simulasi NS-3",
+      "Tahap 5: Evaluasi Metrik & Kesimpulan"
+    ],
+    "asset_folder": "asset",
+    "output_filename": "diagram_alur_penelitian.png",
+    "target_document_docx": "Proposal Skripsi v1.0.docx"
+  }
+  ```
+
+#### B. `insert_diagram_to_document`
+Embeds an image from `/asset` (or a given path) into an existing `.docx` proposal document with standardized, centered figure formatting and official captioning (`Gambar X.Y <Judul>`).
+- **Parameters**: `document_filename` (str), `image_filename_or_path` (str), `caption_title` (str), `chapter_num` (int, default: `3`), `figure_num` (int, default: `1`), `width_inches` (float, default: `5.5`)
+- **Example Payload**:
+  ```json
+  {
+    "document_filename": "Proposal Skripsi v1.0.docx",
+    "image_filename_or_path": "asset/diagram_alur_penelitian.png",
+    "caption_title": "Diagram Alur Pelaksanaan Penelitian",
+    "chapter_num": 3,
+    "figure_num": 1
+  }
+  ```
+
+---
 
 ## 📊 CSV Literature Format
 

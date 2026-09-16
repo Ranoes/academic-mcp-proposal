@@ -11,7 +11,7 @@ COPY requirements.txt pyproject.toml README.md ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source code
-COPY canvas_validator.py builder_engine.py praproposal_builder.py server.py csv_ingestor.py topic_synthesizer.py ./
+COPY canvas_validator.py builder_engine.py praproposal_builder.py server.py csv_ingestor.py topic_synthesizer.py diagram_generator.py ./
 COPY assets/ /app/assets/
 
 

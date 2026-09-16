@@ -114,7 +114,12 @@ graph TD
 - **Fitur Utama**:
   - `plan_research`: Menganalisis topik untuk menurunkan variabel $X$ dan $Y$, rumusan masalah tunggal, serta kata kunci pencarian akademik untuk diteruskan ke MCP `paper-search`.
   - `synthesize_proposal_from_inputs`: Membangun draf lengkap Bab 1 (Latar Belakang, Rumusan Masalah, Tujuan Umum & Khusus, Manfaat, Batasan), Bab 2 (Landasan Teori, Telaah Pustaka Komparatif), dan Bab 3 (Alur Penelitian, Pengumpulan Data, Perancangan Solusi, Pengujian & Metrik Evaluasi).
-  - `synthesize_praproposal_from_inputs`: Menyesuaikan struktur sintesis ke dalam 6 bagian formulir SA2-01A dengan kepatuhan alokasi batas kata.
+### 3.7. `diagram_generator.py` (Mesin Pembuat Diagram Ilmiah & Manajemen Asset)
+- **Fungsi**: Merender gambar diagram ilmiah beresolusi tinggi (300 DPI) ke dalam folder `/asset` di workspace dan menyisipkannya ke dokumen proposal.
+- **Tipe Diagram**:
+  - *Flowchart Alur Penelitian*: Diagram vertikal alur tahapan riset (Tahap 1 s.d. 5) dengan rounded card dan directional arrow.
+  - *Kerangka Konseptual ($X \rightarrow Y$)*: Visualisasi hubungan kausal variabel bebas ($X$), variabel terikat ($Y$), dan intervensi metode.
+  - *Arsitektur Sistem (Layered)*: Diagram bertingkat multi-layer untuk arsitektur software/IoT/ML.
 
 ---
 
@@ -122,6 +127,8 @@ graph TD
 
 | Nama Tool | Deskripsi | Parameter Utama | Output |
 | :--- | :--- | :--- | :--- |
+| `generate_diagram_image` | Menghasilkan gambar diagram (Flowchart, Kerangka Konseptual, Arsitektur), memastikan folder `/asset` dibuat, dan dapat langsung menyisipkan ke dokumen DOCX. | `diagram_type`, `title`, `steps_or_nodes`, `variabel_x`, `variabel_y`, `asset_folder`, `target_document_docx` | Status, path berkas di `/asset`, info penyisipan dokumen |
+| `insert_diagram_to_document` | Menyisipkan file gambar diagram dari folder `/asset` ke dalam dokumen proposal DOCX dengan caption resmi (`Gambar X.Y <Judul>`). | `document_filename`, `image_filename_or_path`, `caption_title`, `chapter_num`, `figure_num` | Status, path file, nomor caption |
 | `generate_praproposal_from_topic` | Menghasilkan formulir pra-proposal `.odt` (SA2-01A) langsung dari topik, data mahasiswa, CSV, atau hasil paper-search beserta validasi canvas otomatis. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` | Status, path berkas `.odt`, canvas compliance, ringkasan bagian |
 | `generate_academic_praproposal` | Menyusun dokumen pra-proposal `.odt` dari struktur metadata dan sections eksplisit disertai audit canvas otomatis. | `metadata`, `sections`, `output_filename` | Status, path berkas `.odt`, canvas compliance |
 | `validate_praproposal_compliance` | Memvalidasi naskah pra-proposal (SA2-01A) terhadap batasan alokasi kata dan Research Canvas (dapat memvalidasi dari payload atau berkas `.odt`). | `metadata`, `sections`, `odt_filename`, `variabel_independen`, `variabel_dependen`, `single_problem_only` | Status (`APPROVED`/`NEEDS_REVISION`), skor kepatuhan (%), budget kata, daftar pelanggaran |
@@ -129,7 +136,7 @@ graph TD
 | `validate_canvas_compliance` | Mengaudit ketelitian metodologi proposal 3 Bab terhadap aturan Research Canvas. | `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `single_problem_only` | Status (`APPROVED`/`NEEDS_REVISION`), skor kepatuhan (%), daftar lolos, daftar pelanggaran |
 | `generate_rubric_checklist_report` | Membuat file audit checklist evaluasi proposal DOCX lengkap dalam format Markdown. | `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` | Status, path file `.md`, ringkasan audit |
 | `get_canvas_guidelines` | Mengambil seluruh rubrik, definisi kode pelanggaran, dan checklist metodologi (termasuk rubrik pra-proposal). | *(tanpa parameter)* | Dictionary rubrik Bab 1, 2, 3, dan SA2-01A |
-| `generate_proposal_from_topic` | Menghasilkan proposal 3 Bab `.docx` lengkap dari topik, variabel, CSV, dan paper-search. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` | Status, path berkas `.docx`, ringkasan bab |
+| `generate_proposal_from_topic` | Menghasilkan proposal 3 Bab `.docx` lengkap dari topik, variabel, CSV, dan paper-search beserta diagram alur riset otomatis. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` | Status, path berkas `.docx`, ringkasan bab |
 | `generate_academic_proposal` | Menyusun dokumen proposal `.docx` dari data Bab 1, Bab 2, Bab 3, dan referensi yang sudah terstruktur. | `metadata`, `bab1_data`, `bab2_subbab`, `bab3_subbab`, `daftar_referensi`, `output_filename` | Status, path berkas `.docx`, jumlah halaman/paragraf |
 | `plan_proposal_research` | Merancang dekomposisi variabel dan query pencarian literatur akademik. | `topic`, `bidang_kajian`, `variabel_x`, `variabel_y` | Variabel $X$/$Y$, rumusan masalah terukur, query `paper-search` |
 | `parse_literature_csv_data` | Mem-parsing file CSV literatur menjadi tabel matriks dan daftar pustaka. | `csv_filename`, `csv_content` | Matriks tabel Bab 2, daftar referensi, paragraf sintesis |

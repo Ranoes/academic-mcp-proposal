@@ -20,9 +20,14 @@ from canvas_validator import (
 )
 from builder_engine import (
     create_generic_proposal,
+    insert_diagram_to_docx,
     inspect_doc,
     record_version_change,
     DEFAULT_TEMPLATE_PATH
+)
+from diagram_generator import (
+    generate_diagram,
+    ensure_asset_dir
 )
 from praproposal_builder import (
     build_praproposal_odt,
@@ -280,6 +285,102 @@ def generate_academic_proposal(
         return res
     except Exception as e:
         return {"status": "ERROR", "message": str(e)}
+
+@mcp.tool()
+def generate_diagram_image(
+    diagram_type: str = "flowchart",
+    title: str = "Diagram Alur Penelitian",
+    steps_or_nodes: Optional[List[Union[str, Dict[str, Any]]]] = None,
+    variabel_x: Optional[str] = None,
+    variabel_y: Optional[str] = None,
+    layers: Optional[List[Dict[str, Any]]] = None,
+    asset_folder: str = "asset",
+    output_filename: Optional[str] = None,
+    caption: Optional[str] = None,
+    target_document_docx: Optional[str] = None,
+    chapter_num: int = 3,
+    figure_num: int = 1,
+    width_inches: float = 5.5
+) -> dict:
+    """
+    Menghasilkan gambar diagram ilmiah (Flowchart Alur Penelitian / Hubungan Variabel X & Y / Arsitektur Sistem),
+    memastikan direktori /asset dibuat di workspace, dan menyimpan file gambar PNG beresolusi tinggi (300 DPI).
+    Jika target_document_docx ditentukan, diagram otomatis langsung disisipkan ke dalam dokumen proposal .docx.
+    """
+    try:
+        diag_res = generate_diagram(
+            diagram_type=diagram_type,
+            title=title,
+            steps_or_nodes=steps_or_nodes,
+            variabel_x=variabel_x,
+            variabel_y=variabel_y,
+            layers=layers,
+            workspace_dir=WORKSPACE_DIR,
+            asset_folder=asset_folder,
+            output_filename=output_filename
+        )
+
+        inserted_doc_info = None
+        if target_document_docx:
+            doc_path = os.path.join(WORKSPACE_DIR, target_document_docx)
+            cap_title = caption or title
+            inserted_doc_info = insert_diagram_to_docx(
+                docx_path=doc_path,
+                image_path=diag_res["full_path"],
+                caption_title=cap_title,
+                chapter_num=chapter_num,
+                figure_num=figure_num,
+                width_inches=width_inches
+            )
+
+        return {
+            "status": "SUCCESS",
+            "diagram_info": diag_res,
+            "image_path": diag_res["relative_path"],
+            "full_path": diag_res["full_path"],
+            "inserted_into_document": inserted_doc_info,
+            "message": f"Diagram '{title}' berhasil dibuat dan disimpan di {diag_res['relative_path']}"
+        }
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "message": f"Gagal menghasilkan diagram: {str(e)}"
+        }
+
+@mcp.tool()
+def insert_diagram_to_document(
+    document_filename: str,
+    image_filename_or_path: str,
+    caption_title: str = "Diagram Penelitian",
+    chapter_num: int = 3,
+    figure_num: int = 1,
+    width_inches: float = 5.5
+) -> dict:
+    """
+    Menyisipkan berkas gambar diagram dari folder /asset ke dalam naskah proposal (.docx) di workspace
+    disertai penomoran caption resmi (format: Gambar X.Y <Judul>).
+    """
+    if os.path.isabs(image_filename_or_path):
+        img_path = image_filename_or_path
+    else:
+        direct_p = os.path.join(WORKSPACE_DIR, image_filename_or_path)
+        asset_p = os.path.join(WORKSPACE_DIR, "asset", image_filename_or_path)
+        if os.path.exists(direct_p):
+            img_path = direct_p
+        elif os.path.exists(asset_p):
+            img_path = asset_p
+        else:
+            img_path = direct_p
+
+    doc_path = os.path.join(WORKSPACE_DIR, document_filename)
+    return insert_diagram_to_docx(
+        docx_path=doc_path,
+        image_path=img_path,
+        caption_title=caption_title,
+        chapter_num=chapter_num,
+        figure_num=figure_num,
+        width_inches=width_inches
+    )
 
 @mcp.tool()
 def inspect_proposal_document(filename: str = "Proposal Skripsi v1.0.docx") -> dict:
@@ -651,7 +752,34 @@ def generate_proposal_from_topic(
         single_problem_only=True
     )
 
-    # 7. Generate berkas Word DOCX
+    # 7. Render diagram alur penelitian ke /asset dan siapkan untuk dokumen DOCX
+    diag_images = []
+    try:
+        diag_res = generate_diagram(
+            diagram_type="flowchart",
+            title="Diagram Alur Pelaksanaan Penelitian",
+            steps_or_nodes=[
+                f"Tahap 1: Identifikasi Permasalahan {vy}",
+                f"Tahap 2: Studi Literatur & Benchmark Terkait {vx}",
+                f"Tahap 3: Perancangan Model Arsitektur {vx}",
+                f"Tahap 4: Implementasi & Pengujian Eksperimental",
+                f"Tahap 5: Evaluasi Metrik Kuantitatif & Kesimpulan"
+            ],
+            workspace_dir=WORKSPACE_DIR,
+            asset_folder="asset",
+            output_filename="diagram_alur_penelitian.png"
+        )
+        diag_images.append({
+            "image_path": diag_res["full_path"],
+            "title": "Diagram Alur Pelaksanaan Penelitian",
+            "chapter_num": 3,
+            "figure_num": 1,
+            "width_inches": 5.5
+        })
+    except Exception:
+        diag_images = None
+
+    # 8. Generate berkas Word DOCX
     out_path = os.path.join(WORKSPACE_DIR, output_filename)
     tpl_path = None
     if custom_template_filename:
@@ -666,6 +794,7 @@ def generate_proposal_from_topic(
         bab3_subbab=proposal_content["bab3_subbab"],
         daftar_referensi=proposal_content["daftar_referensi"],
         tabel_tinjauan_pustaka=proposal_content["tabel_tinjauan_pustaka"],
+        diagram_images=diag_images,
         output_path=out_path,
         template_path=tpl_path
     )

@@ -214,6 +214,65 @@ def add_figure_caption(doc, chapter_num: int, figure_num: int, title: str):
         p._p.append(elem)
     return p
 
+def add_figure_image(
+    doc,
+    image_path: str,
+    chapter_num: int = 3,
+    figure_num: int = 1,
+    caption_title: str = "Diagram Penelitian",
+    width_inches: float = 5.5
+):
+    """
+    Menambahkan gambar ke dalam dokumen DOCX dengan format resmi FILKOM UB:
+    1. Gambar diletakkan di paragraf centered dengan lebar proporsional.
+    2. Caption Gambar diletakkan di BAWAH gambar dengan field SEQ Gambar otomatis.
+    """
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"File gambar tidak ditemukan di {image_path}")
+
+    p_img = doc.add_paragraph()
+    p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p_img.add_run()
+    run.add_picture(image_path, width=Inches(width_inches))
+
+    p_cap = add_figure_caption(doc, chapter_num, figure_num, caption_title)
+    return p_img, p_cap
+
+def insert_diagram_to_docx(
+    docx_path: str,
+    image_path: str,
+    caption_title: str = "Diagram Penelitian",
+    chapter_num: int = 3,
+    figure_num: int = 1,
+    width_inches: float = 5.5
+) -> Dict[str, Any]:
+    """
+    Menyisipkan gambar diagram ke dalam berkas DOCX yang sudah ada di workspace.
+    """
+    if not os.path.exists(docx_path):
+        return {"status": "ERROR", "message": f"Berkas DOCX {docx_path} tidak ditemukan."}
+    if not os.path.exists(image_path):
+        return {"status": "ERROR", "message": f"Berkas gambar {image_path} tidak ditemukan."}
+
+    doc = docx.Document(docx_path)
+    add_figure_image(
+        doc=doc,
+        image_path=image_path,
+        chapter_num=chapter_num,
+        figure_num=figure_num,
+        caption_title=caption_title,
+        width_inches=width_inches
+    )
+    doc.save(docx_path)
+
+    return {
+        "status": "SUCCESS",
+        "docx_path": docx_path,
+        "image_path": image_path,
+        "caption": f"Gambar {chapter_num}.{figure_num} {caption_title}",
+        "message": f"Diagram berhasil disisipkan ke dalam dokumen {os.path.basename(docx_path)}"
+    }
+
 def add_styled_table(
     doc,
     data: List[List[str]],
@@ -281,6 +340,7 @@ def create_generic_proposal(
     tabel_operasionalisasi_variabel: Optional[List[List[str]]] = None,
     tabel_tahapan_metode: Optional[List[List[str]]] = None,
     tabel_jadwal: Optional[List[List[str]]] = None,
+    diagram_images: Optional[List[Dict[str, Any]]] = None,
     lampiran_data: Optional[List[Dict[str, Any]]] = None,
     default_font: str = "Times New Roman",
     output_path: str = "Proposal Skripsi.docx",
@@ -461,6 +521,26 @@ def create_generic_proposal(
         center_cols_jadwal = list(range(1, len(tabel_jadwal[0]))) if len(tabel_jadwal) > 0 else []
         add_styled_table(doc, tabel_jadwal, center_cols=center_cols_jadwal)
         ch3_tbl_idx += 1
+
+    # Sisipkan Gambar Diagram Penelitian (jika ada)
+    ch3_fig_idx = 1
+    if diagram_images:
+        for diag in diagram_images:
+            img_p = diag.get("image_path")
+            cap = diag.get("title") or diag.get("caption") or "Diagram Alur Penelitian"
+            c_num = diag.get("chapter_num", 3)
+            f_num = diag.get("figure_num", ch3_fig_idx)
+            w_inch = diag.get("width_inches", 5.5)
+            if img_p and os.path.exists(img_p):
+                add_figure_image(
+                    doc=doc,
+                    image_path=img_p,
+                    chapter_num=c_num,
+                    figure_num=f_num,
+                    caption_title=cap,
+                    width_inches=w_inch
+                )
+                ch3_fig_idx += 1
 
     # =========================================================================
     # DAFTAR REFERENSI
