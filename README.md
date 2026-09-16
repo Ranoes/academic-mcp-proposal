@@ -126,7 +126,7 @@ Configuration in `mcp_config.json` for Python:
 
 ## 🛠️ Available MCP Tools Reference
 
-Below is a detailed guide for all **13 MCP Tools** provided by the server, organized by function:
+Below is a detailed guide for all **15 MCP Tools** provided by the server, organized by function:
 
 ---
 
@@ -303,6 +303,49 @@ Embeds an image from `/asset` (or a given path) into an existing `.docx` proposa
     "caption_title": "Diagram Alur Pelaksanaan Penelitian",
     "chapter_num": 3,
     "figure_num": 1
+  }
+  ```
+
+---
+
+### 📐 6. Mathematical Formula Generation & Equation Tools
+
+#### A. `generate_math_formula_image`
+Renders LaTeX mathematical formulas into crisp 300 DPI transparent PNG images stored in `/asset` and supports automatic equation numbering `(Chapter.Formula)` with optional variable definitions. Can directly insert into an existing `.docx` proposal.
+- **Parameters**: `latex_code` (str), `formula_title` (str, opt), `chapter_num` (int, default: `3`), `formula_num` (int, default: `1`), `variable_definitions` (dict, opt), `asset_folder` (str, default: `"asset"`), `output_filename` (str, opt), `target_document_docx` (str, opt), `intro_text` (str, opt)
+- **Supported Math Syntax**: Greek letters ($\alpha, \beta, \gamma, \sigma, \theta$), fractions (`\frac{a}{b}`), summations (`\sum_{i=1}^n`), integrals (`\int`), square roots (`\sqrt`), sub/superscripts (`x_i^2`), matrix/vector terms.
+- **Example Payload**:
+  ```json
+  {
+    "latex_code": "F_1 = 2 \\cdot \\frac{\\text{Precision} \\cdot \\text{Recall}}{\\text{Precision} + \\text{Recall}}",
+    "formula_title": "F1-Score",
+    "chapter_num": 3,
+    "formula_num": 1,
+    "variable_definitions": {
+      "Precision": "Tingkat ketepatan klasifikasi kelas positif",
+      "Recall": "Tingkat sensitivitas model terhadap kelas positif"
+    },
+    "asset_folder": "asset",
+    "output_filename": "formula_3_1_f1_score.png",
+    "target_document_docx": "Proposal Skripsi v1.0.docx"
+  }
+  ```
+
+#### B. `insert_math_formula_to_document`
+Inserts a formula image from `/asset` into a `.docx` document using the standard academic layout: a borderless 1-row $\times$ 2-column table with the formula centered in the left column (5.2 in), right-aligned equation numbering `(X.Y)` in the right column (0.8 in), and indented *"di mana: ..."* variable definitions.
+- **Parameters**: `document_filename` (str), `image_filename_or_path` (str), `chapter_num` (int, default: `3`), `formula_num` (int, default: `1`), `intro_text` (str, opt), `variable_definitions` (dict, opt), `image_width_inches` (float, default: `4.0`)
+- **Example Payload**:
+  ```json
+  {
+    "document_filename": "Proposal Skripsi v1.0.docx",
+    "image_filename_or_path": "asset/formula_3_1_f1_score.png",
+    "chapter_num": 3,
+    "formula_num": 1,
+    "intro_text": "Perhitungan nilai F1-Score dirumuskan pada Persamaan (3.1) sebagai berikut:",
+    "variable_definitions": {
+      "Precision": "Tingkat ketepatan klasifikasi",
+      "Recall": "Tingkat kelengkapan klasifikasi"
+    }
   }
   ```
 

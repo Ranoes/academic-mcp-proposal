@@ -6,11 +6,26 @@ Kompatibel dengan Model Context Protocol (MCP) untuk otomatisasi penyusunan dan 
 import os
 import shutil
 import subprocess
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 try:
     from mcp.server import FastMCP
 except ImportError:
-    from mcp.server.fastmcp import FastMCP  # type: ignore
+    try:
+        from mcp.server.fastmcp import FastMCP  # type: ignore
+    except ImportError:
+        class FastMCP:  # type: ignore
+            def __init__(self, name: str = "academic-proposal-mcp"):
+                self.name = name
+            def tool(self, **kwargs):
+                def decorator(fn):
+                    return fn
+                return decorator
+            def prompt(self, **kwargs):
+                def decorator(fn):
+                    return fn
+                return decorator
+            def run(self, transport="stdio"):
+                pass
 from canvas_validator import (
     check_research_canvas,
     check_praproposal_canvas,
@@ -21,6 +36,7 @@ from canvas_validator import (
 from builder_engine import (
     create_generic_proposal,
     insert_diagram_to_docx,
+    insert_formula_to_docx,
     inspect_doc,
     record_version_change,
     DEFAULT_TEMPLATE_PATH
@@ -28,6 +44,9 @@ from builder_engine import (
 from diagram_generator import (
     generate_diagram,
     ensure_asset_dir
+)
+from formula_generator import (
+    generate_math_formula
 )
 from praproposal_builder import (
     build_praproposal_odt,
@@ -380,6 +399,83 @@ def insert_diagram_to_document(
         chapter_num=chapter_num,
         figure_num=figure_num,
         width_inches=width_inches
+    )
+
+@mcp.tool()
+def generate_math_formula_image(
+    latex_code: str,
+    formula_title: str = "Persamaan Matematika",
+    chapter_num: int = 3,
+    formula_num: int = 1,
+    variable_definitions: Optional[Dict[str, str]] = None,
+    asset_folder: str = "asset",
+    output_filename: Optional[str] = None,
+    target_document_docx: Optional[str] = None,
+    intro_text: Optional[str] = None
+) -> dict:
+    """
+    Merender rumus matematika (LaTeX math notation) menjadi berkas gambar PNG beresolusi tinggi (300 DPI)
+    dan menyimpannya di folder /asset pada workspace.
+    Mendukung format penomoran resmi persamaan akademis (X.Y), keterangan simbol variabel 'di mana:',
+    serta opsi penyisipan otomatis langsung ke naskah proposal (.docx).
+    Contoh latex_code: "f(x) = \\sigma(W^T x + b)", "MAE = \\frac{1}{n} \\sum_{i=1}^{n} |y_i - \\hat{y}_i|".
+    """
+    try:
+        res = generate_math_formula(
+            latex_code=latex_code,
+            formula_title=formula_title,
+            chapter_num=chapter_num,
+            formula_num=formula_num,
+            variable_definitions=variable_definitions,
+            workspace_dir=WORKSPACE_DIR,
+            asset_folder=asset_folder,
+            output_filename=output_filename,
+            target_document_docx=target_document_docx,
+            intro_text=intro_text
+        )
+        return res
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "message": f"Gagal menghasilkan rumus matematika: {str(e)}"
+        }
+
+@mcp.tool()
+def insert_math_formula_to_document(
+    document_filename: str,
+    image_filename_or_path: str,
+    chapter_num: int = 3,
+    formula_num: int = 1,
+    intro_text: Optional[str] = None,
+    variable_definitions: Optional[Dict[str, str]] = None,
+    image_width_inches: float = 4.0
+) -> dict:
+    """
+    Menyisipkan rumus matematika dari folder /asset ke dalam naskah proposal (.docx) di workspace
+    dengan format tabel 1x2 borderless resmi: Rumus di tengah (Center), Nomor Persamaan (X.Y) rata kanan (Right),
+    serta keterangan simbol variabel 'di mana:' di bawah persamaan.
+    """
+    if os.path.isabs(image_filename_or_path):
+        img_path = image_filename_or_path
+    else:
+        direct_p = os.path.join(WORKSPACE_DIR, image_filename_or_path)
+        asset_p = os.path.join(WORKSPACE_DIR, "asset", image_filename_or_path)
+        if os.path.exists(direct_p):
+            img_path = direct_p
+        elif os.path.exists(asset_p):
+            img_path = asset_p
+        else:
+            img_path = direct_p
+
+    doc_path = os.path.join(WORKSPACE_DIR, document_filename)
+    return insert_formula_to_docx(
+        docx_path=doc_path,
+        image_path=img_path,
+        chapter_num=chapter_num,
+        formula_num=formula_num,
+        intro_text=intro_text,
+        variable_definitions=variable_definitions,
+        image_width_inches=image_width_inches
     )
 
 @mcp.tool()

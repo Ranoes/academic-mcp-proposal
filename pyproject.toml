@@ -20,7 +20,7 @@ dependencies = [
 academic-proposal-mcp = "server:main"
 
 [tool.setuptools]
-py-modules = ["server", "builder_engine", "canvas_validator", "csv_ingestor", "topic_synthesizer", "praproposal_builder", "diagram_generator"]
+py-modules = ["server", "builder_engine", "canvas_validator", "csv_ingestor", "topic_synthesizer", "praproposal_builder", "diagram_generator", "formula_generator"]
 
 [tool.setuptools.package-data]
 "*" = ["assets/**/*"]
