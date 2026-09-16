@@ -323,12 +323,12 @@ Embeds an image from `/asset` (or a given path) into an existing `.docx` proposa
 
 ---
 
-### 📐 6. Mathematical Formula Generation & Equation Tools
+### 📐 6. Mathematical Formula Generation & Native Equation Tools
 
 #### A. `generate_math_formula_image`
-Renders LaTeX mathematical formulas into crisp 300 DPI transparent PNG images stored in `/asset` and supports automatic equation numbering `(Chapter.Formula)` with optional variable definitions. Can directly insert into an existing `.docx` proposal.
-- **Parameters**: `latex_code` (str), `formula_title` (str, opt), `chapter_num` (int, default: `3`), `formula_num` (int, default: `1`), `variable_definitions` (dict, opt), `asset_folder` (str, default: `"asset"`), `output_filename` (str, opt), `target_document_docx` (str, opt), `intro_text` (str, opt)
-- **Supported Math Syntax**: Greek letters ($\alpha, \beta, \gamma, \sigma, \theta$), fractions (`\frac{a}{b}`), summations (`\sum_{i=1}^n`), integrals (`\int`), square roots (`\sqrt`), sub/superscripts (`x_i^2`), matrix/vector terms.
+Renders LaTeX mathematical formulas natively into Microsoft Word equations (**Office Open XML Math / OMML `<m:oMath>`**) as fully editable, crisp vector math objects directly in the `.docx` document, and/or exports 300 DPI transparent PNG images to `/asset`. Supports automatic equation numbering `(Chapter.Formula)` and variable definitions.
+- **Parameters**: `latex_code` (str), `formula_title` (str, opt), `chapter_num` (int, default: `3`), `formula_num` (int, default: `1`), `variable_definitions` (dict, opt), `asset_folder` (str, default: `"asset"`), `output_filename` (str, opt), `target_document_docx` (str, opt), `intro_text` (str, opt), `use_native_equation` (bool, default: `true`)
+- **Supported Math Syntax**: Greek letters ($\alpha, \beta, \gamma, \sigma, \theta$), fractions (`\frac{a}{b}`), summations (`\sum_{i=1}^n`), integrals (`\int`), square roots (`\sqrt`), accents (`\hat{y}`, `\bar{x}`), paired pipes (`|y_i - \hat{y}_i|`), sub/superscripts (`x_i^2`), matrix/vector terms.
 - **Example Payload**:
   ```json
   {
@@ -340,27 +340,28 @@ Renders LaTeX mathematical formulas into crisp 300 DPI transparent PNG images st
       "Precision": "Tingkat ketepatan klasifikasi kelas positif",
       "Recall": "Tingkat sensitivitas model terhadap kelas positif"
     },
-    "asset_folder": "asset",
-    "output_filename": "formula_3_1_f1_score.png",
+    "use_native_equation": true,
     "target_document_docx": "Proposal Skripsi v1.0.docx"
   }
   ```
 
 #### B. `insert_math_formula_to_document`
-Inserts a formula image from `/asset` into a `.docx` document using the standard academic layout: a borderless 1-row $\times$ 2-column table with the formula centered in the left column (5.2 in), right-aligned equation numbering `(X.Y)` in the right column (0.8 in), and indented *"di mana: ..."* variable definitions.
-- **Parameters**: `document_filename` (str), `image_filename_or_path` (str), `chapter_num` (int, default: `3`), `formula_num` (int, default: `1`), `intro_text` (str, opt), `variable_definitions` (dict, opt), `image_width_inches` (float, default: `4.0`)
+Inserts a formula into an existing `.docx` document using the standard academic layout: a borderless 1-row $\times$ 2-column table with the **native Word Equation (`<m:oMath>`)** centered in the left column (5.2 in), right-aligned equation numbering `(X.Y)` in the right column (0.8 in), and indented *"di mana: ..."* variable definitions.
+- **Parameters**: `document_filename` (str), `latex_code` (str, opt), `image_filename_or_path` (str, opt), `chapter_num` (int, default: `3`), `formula_num` (int, default: `1`), `intro_text` (str, opt), `variable_definitions` (dict, opt), `use_native_equation` (bool, default: `true`), `image_width_inches` (float, default: `4.0`)
 - **Example Payload**:
   ```json
   {
     "document_filename": "Proposal Skripsi v1.0.docx",
-    "image_filename_or_path": "asset/formula_3_1_f1_score.png",
+    "latex_code": "\\text{MAE} = \\frac{1}{n} \\sum_{i=1}^{n} |y_i - \\hat{y}_i|",
     "chapter_num": 3,
     "formula_num": 1,
-    "intro_text": "Perhitungan nilai F1-Score dirumuskan pada Persamaan (3.1) sebagai berikut:",
+    "intro_text": "Perhitungan nilai Mean Absolute Error (MAE) dirumuskan pada Persamaan (3.1) sebagai berikut:",
     "variable_definitions": {
-      "Precision": "Tingkat ketepatan klasifikasi",
-      "Recall": "Tingkat kelengkapan klasifikasi"
-    }
+      "y_i": "Nilai aktual data observasi ke-i",
+      "\\hat{y}_i": "Nilai estimasi prediksi model ke-i",
+      "n": "Jumlah total sampel pengujian"
+    },
+    "use_native_equation": true
   }
   ```
 

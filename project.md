@@ -122,14 +122,15 @@ graph TD
   - *Kerangka Konseptual ($X \rightarrow Y$)*: Visualisasi hubungan kausal variabel bebas ($X$), variabel terikat ($Y$), dan intervensi metode.
   - *Arsitektur Sistem (Layered)*: Diagram bertingkat multi-layer untuk arsitektur software/IoT/ML.
 
-### 3.8. `formula_generator.py` (Mesin Render Rumus Matematika & Persamaan Akademik)
-- **Fungsi**: Merender ekspresi matematika berbasis notasi LaTeX math menjadi gambar PNG transparan beresolusi tinggi (300 DPI), menyimpannya ke dalam direktori `/asset` di workspace, dan menyisipkannya ke dalam naskah proposal DOCX.
+### 3.8. `formula_generator.py` (Mesin Render Persamaan Matematika Native Word & OMML)
+- **Fungsi**: Mengonversi ekspresi matematika berbasis notasi LaTeX math secara langsung menjadi objek **Persamaan Native Word (Office Open XML Math / OMML `<m:oMath>`)** yang dapat diedit (*editable*), berukuran sangat ringan, dan memiliki kualitas vektor murni (*Cambria Math*) tanpa bergantung pada citra bitmap/PNG.
 - **Standar Tata Letak Persamaan Akademik**:
   - Menggunakan tabel 1 baris $\times$ 2 kolom borderless:
-    - **Kolom Kiri (5.2 inci)**: Menampung citra rumus matematika dengan perataan tengah (*Center*).
+    - **Kolom Kiri (5.2 inci)**: Menampung elemen persamaan native Word `<m:oMath>` dengan perataan tengah (*Center*).
     - **Kolom Kanan (0.8 inci)**: Menampung label nomor persamaan resmi `(X.Y)` dengan perataan kanan (*Right*).
   - Dilengkapi blok keterangan simbol variabel (*"di mana: ... "*) dengan format baris bertakuk (*hanging indent*) dan simbol variabel miring (*italic*).
-  - Mendukung sintesis rumus kompleks (pecahan `\frac`, notasi sigma `\sum`, integral `\int`, fungsi aktivasi `\sigma`, matriks/vektor, akar `\sqrt`, dan huruf Yunani `\alpha, \beta, \gamma, \theta`).
+  - Mendukung sintesis rumus kompleks (pecahan `\frac`, notasi sigma `\sum`, integral `\int`, fungsi aktivasi `\sigma`, matriks/vektor, akar `\sqrt`, aksen `\hat` / `\bar`, dan huruf Yunani `\alpha, \beta, \gamma, \theta`).
+  - Menyediakan fallback dan opsi ekspor citra PNG transparan (300 DPI) ke folder `/asset` jika diperlukan.
 
 ---
 
@@ -138,8 +139,8 @@ graph TD
 | Nama Tool | Deskripsi | Parameter Utama | Output |
 | :--- | :--- | :--- | :--- |
 | `generate_topic_from_artefact` | Menghasilkan usulan topik penelitian ilmiah komprehensif (Judul, Urgensi, Rumusan Masalah, Variabel X/Y, Tujuan, Manfaat, dan Audit Canvas) berbasis artefak (berita, dokumen, cerita kasus, deskripsi citra/OCR). | `artefact_content`, `artefact_type`, `artefact_title`, `bidang_kajian`, `proposed_method_or_x`, `target_metric_or_y`, `institutional_focus` | Paket usulan topik, urgensi 3-dimensi, rumusan masalah tunggal terukur, variabel, tujuan, manfaat, audit canvas (100%), kueri paper-search |
-| `generate_math_formula_image` | Merender rumus matematika LaTeX ke citra PNG transparan (300 DPI) di `/asset`, dengan penomoran resmi `(X.Y)` dan opsi langsung disisipkan ke naskah proposal DOCX. | `latex_code`, `formula_title`, `chapter_num`, `formula_num`, `variable_definitions`, `asset_folder`, `target_document_docx` | Status, nomor persamaan `(X.Y)`, path di `/asset`, info penyisipan |
-| `insert_math_formula_to_document` | Menyisipkan citra rumus matematika dari `/asset` ke dalam naskah proposal DOCX dengan layout tabel borderless dan keterangan variabel. | `document_filename`, `image_filename_or_path`, `chapter_num`, `formula_num`, `intro_text`, `variable_definitions` | Status, path dokumen, nomor persamaan |
+| `generate_math_formula_image` | Menghasilkan persamaan matematika native Word (OMML) dan/atau citra PNG (300 DPI) di `/asset`, lengkap dengan penomoran resmi `(X.Y)` dan opsi langsung disisipkan ke naskah proposal DOCX. | `latex_code`, `formula_title`, `chapter_num`, `formula_num`, `variable_definitions`, `asset_folder`, `target_document_docx`, `use_native_equation` | Status, nomor persamaan `(X.Y)`, mode render (`NATIVE_OMML_EQUATION`), path di `/asset`, info penyisipan |
+| `insert_math_formula_to_document` | Menyisipkan persamaan matematika ke dalam naskah proposal DOCX secara native (<m:oMath>) atau dari `/asset` dengan layout tabel borderless dan keterangan variabel. | `document_filename`, `latex_code`, `image_filename_or_path`, `chapter_num`, `formula_num`, `intro_text`, `variable_definitions`, `use_native_equation` | Status, path dokumen, nomor persamaan, mode render |
 | `generate_diagram_image` | Menghasilkan gambar diagram (Flowchart, Kerangka Konseptual, Arsitektur), memastikan folder `/asset` dibuat, dan dapat langsung menyisipkan ke dokumen DOCX. | `diagram_type`, `title`, `steps_or_nodes`, `variabel_x`, `variabel_y`, `asset_folder`, `target_document_docx` | Status, path berkas di `/asset`, info penyisipan dokumen |
 | `insert_diagram_to_document` | Menyisipkan file gambar diagram dari folder `/asset` ke dalam dokumen proposal DOCX dengan caption resmi (`Gambar X.Y <Judul>`). | `document_filename`, `image_filename_or_path`, `caption_title`, `chapter_num`, `figure_num` | Status, path file, nomor caption |
 | `generate_praproposal_from_topic` | Menghasilkan formulir pra-proposal `.odt` (SA2-01A) langsung dari topik, data mahasiswa, CSV, atau hasil paper-search beserta validasi canvas otomatis. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` | Status, path berkas `.odt`, canvas compliance, ringkasan bagian |

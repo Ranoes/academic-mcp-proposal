@@ -275,77 +275,45 @@ def insert_diagram_to_docx(
 
 def insert_formula_to_docx(
     docx_path: str,
-    image_path: str,
+    latex_code: Optional[str] = None,
+    image_path: Optional[str] = None,
     chapter_num: int = 3,
     formula_num: int = 1,
     intro_text: Optional[str] = None,
     variable_definitions: Optional[Dict[str, str]] = None,
+    use_native_equation: bool = True,
     image_width_inches: float = 4.0
 ) -> Dict[str, Any]:
     """
-    Menyisipkan rumus matematika dari berkas gambar ke dokumen DOCX yang ada.
+    Menyisipkan rumus matematika ke dokumen DOCX yang ada di workspace,
+    secara default sebagai Objek Persamaan Native Word (OMML / <m:oMath>) yang dapat diedit,
+    atau sebagai fallback gambar PNG dalam tabel 1x2 borderless resmi.
     """
     if not os.path.exists(docx_path):
         return {"status": "ERROR", "message": f"Berkas DOCX {docx_path} tidak ditemukan."}
-    if not os.path.exists(image_path):
-        return {"status": "ERROR", "message": f"Berkas gambar rumus {image_path} tidak ditemukan."}
 
+    from formula_generator import add_formula_to_docx_doc
     doc = docx.Document(docx_path)
 
-    if intro_text:
-        p_intro = doc.add_paragraph(intro_text)
-        p_intro.paragraph_format.space_after = Pt(4)
-
-    # Buat tabel borderless 1x2 untuk rumus dan nomor persamaan
-    tbl = doc.add_table(rows=1, cols=2)
-    tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
-    tbl.autofit = False
-
-    tblPr = tbl._tbl.tblPr
-    borders_xml = (
-        f'<w:tblBorders {nsdecls("w")}>'
-        f'<w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/>'
-        f'<w:right w:val="none"/><w:insideH w:val="none"/><w:insideV w:val="none"/>'
-        f'</w:tblBorders>'
+    add_formula_to_docx_doc(
+        doc=doc,
+        latex_code=latex_code,
+        image_path=image_path,
+        chapter_num=chapter_num,
+        formula_num=formula_num,
+        intro_text=intro_text,
+        variable_definitions=variable_definitions,
+        use_native_equation=use_native_equation,
+        image_width_inches=image_width_inches
     )
-    tblPr.append(parse_xml(borders_xml))
-
-    cell_eq = tbl.rows[0].cells[0]
-    cell_eq.width = Inches(5.2)
-    p_eq = cell_eq.paragraphs[0]
-    p_eq.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_eq.paragraph_format.space_before = Pt(4)
-    p_eq.paragraph_format.space_after = Pt(4)
-
-    run_img = p_eq.add_run()
-    run_img.add_picture(image_path, width=Inches(image_width_inches))
-
-    cell_num = tbl.rows[0].cells[1]
-    cell_num.width = Inches(0.8)
-    p_num = cell_num.paragraphs[0]
-    p_num.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_num.paragraph_format.space_before = Pt(8)
-    p_num.paragraph_format.space_after = Pt(4)
-    run_num = p_num.add_run(f"({chapter_num}.{formula_num})")
-
-    if variable_definitions:
-        p_dimana = doc.add_paragraph("di mana:")
-        p_dimana.paragraph_format.space_before = Pt(4)
-        p_dimana.paragraph_format.space_after = Pt(2)
-        for sym, desc in variable_definitions.items():
-            p_var = doc.add_paragraph()
-            p_var.paragraph_format.left_indent = Inches(0.25)
-            p_var.paragraph_format.space_before = Pt(1)
-            p_var.paragraph_format.space_after = Pt(2)
-            r_sym = p_var.add_run(f"{sym}")
-            r_sym.italic = True
-            p_var.add_run(f" = {desc}")
 
     doc.save(docx_path)
     return {
         "status": "SUCCESS",
         "docx_path": docx_path,
+        "latex_code": latex_code,
         "image_path": image_path,
+        "rendering_mode": "NATIVE_OMML_EQUATION" if (use_native_equation and latex_code) else "IMAGE_PNG",
         "equation_number": f"({chapter_num}.{formula_num})",
         "message": f"Rumus matematika ({chapter_num}.{formula_num}) berhasil disisipkan ke dalam dokumen {os.path.basename(docx_path)}"
     }

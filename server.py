@@ -412,11 +412,12 @@ def generate_math_formula_image(
     asset_folder: str = "asset",
     output_filename: Optional[str] = None,
     target_document_docx: Optional[str] = None,
-    intro_text: Optional[str] = None
+    intro_text: Optional[str] = None,
+    use_native_equation: bool = True
 ) -> dict:
     """
-    Merender rumus matematika (LaTeX math notation) menjadi berkas gambar PNG beresolusi tinggi (300 DPI)
-    dan menyimpannya di folder /asset pada workspace.
+    Merender rumus matematika (notasi LaTeX) menjadi Objek Persamaan Native Word (OMML / <m:oMath>)
+    yang dapat diedit langsung di dokumen DOCX, dan/atau citra PNG beresolusi tinggi (300 DPI) di folder /asset.
     Mendukung format penomoran resmi persamaan akademis (X.Y), keterangan simbol variabel 'di mana:',
     serta opsi penyisipan otomatis langsung ke naskah proposal (.docx).
     Contoh latex_code: "f(x) = \\sigma(W^T x + b)", "MAE = \\frac{1}{n} \\sum_{i=1}^{n} |y_i - \\hat{y}_i|".
@@ -432,7 +433,8 @@ def generate_math_formula_image(
             asset_folder=asset_folder,
             output_filename=output_filename,
             target_document_docx=target_document_docx,
-            intro_text=intro_text
+            intro_text=intro_text,
+            use_native_equation=use_native_equation
         )
         return res
     except Exception as e:
@@ -444,38 +446,45 @@ def generate_math_formula_image(
 @mcp.tool()
 def insert_math_formula_to_document(
     document_filename: str,
-    image_filename_or_path: str,
+    latex_code: Optional[str] = None,
+    image_filename_or_path: Optional[str] = None,
     chapter_num: int = 3,
     formula_num: int = 1,
     intro_text: Optional[str] = None,
     variable_definitions: Optional[Dict[str, str]] = None,
+    use_native_equation: bool = True,
     image_width_inches: float = 4.0
 ) -> dict:
     """
-    Menyisipkan rumus matematika dari folder /asset ke dalam naskah proposal (.docx) di workspace
+    Menyisipkan rumus matematika ke dalam naskah proposal (.docx) di workspace
+    secara default sebagai Objek Persamaan Native Word (<m:oMath>) yang dapat diedit,
     dengan format tabel 1x2 borderless resmi: Rumus di tengah (Center), Nomor Persamaan (X.Y) rata kanan (Right),
     serta keterangan simbol variabel 'di mana:' di bawah persamaan.
     """
-    if os.path.isabs(image_filename_or_path):
-        img_path = image_filename_or_path
-    else:
-        direct_p = os.path.join(WORKSPACE_DIR, image_filename_or_path)
-        asset_p = os.path.join(WORKSPACE_DIR, "asset", image_filename_or_path)
-        if os.path.exists(direct_p):
-            img_path = direct_p
-        elif os.path.exists(asset_p):
-            img_path = asset_p
+    img_path = None
+    if image_filename_or_path:
+        if os.path.isabs(image_filename_or_path):
+            img_path = image_filename_or_path
         else:
-            img_path = direct_p
+            direct_p = os.path.join(WORKSPACE_DIR, image_filename_or_path)
+            asset_p = os.path.join(WORKSPACE_DIR, "asset", image_filename_or_path)
+            if os.path.exists(direct_p):
+                img_path = direct_p
+            elif os.path.exists(asset_p):
+                img_path = asset_p
+            else:
+                img_path = direct_p
 
     doc_path = os.path.join(WORKSPACE_DIR, document_filename)
     return insert_formula_to_docx(
         docx_path=doc_path,
+        latex_code=latex_code,
         image_path=img_path,
         chapter_num=chapter_num,
         formula_num=formula_num,
         intro_text=intro_text,
         variable_definitions=variable_definitions,
+        use_native_equation=use_native_equation,
         image_width_inches=image_width_inches
     )
 
