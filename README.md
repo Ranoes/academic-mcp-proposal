@@ -34,16 +34,18 @@
 
 | Tool | Description | Key Parameters |
 | :--- | :--- | :--- |
-| `generate_praproposal_from_topic` | One-shot generator for academic pre-proposal form (`.odt`, format SA2-01A) directly from topic, student metadata, CSV data, or paper-search results. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` |
-| `generate_academic_praproposal` | Assembles and generates a complete academic pre-proposal document (`.odt`, format SA2-01A). | `metadata`, `sections`, `output_filename` |
-| `generate_rubric_checklist_report` | Generates a comprehensive academic audit checklist report in Markdown format based on standard evaluation rubrics. | `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` |
+| `generate_praproposal_from_topic` | One-shot generator for academic pre-proposal form (`.odt`, format SA2-01A) directly from topic, student metadata, CSV data, or paper-search results with automatic Canvas validation. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` |
+| `generate_academic_praproposal` | Assembles and generates a complete academic pre-proposal document (`.odt`, format SA2-01A) with automated Canvas compliance auditing. | `metadata`, `sections`, `output_filename` |
+| `validate_praproposal_compliance` | Validates pre-proposal form (SA2-01A) rigor against standard research canvas and word count budget limits (Latar Belakang <= 500w, Landasan Kepustakaan <= 250w, Metode <= 250w). | `metadata`, `sections`, `odt_filename`, `variabel_independen`, `variabel_dependen`, `single_problem_only` |
+| `generate_praproposal_rubric_checklist_report` | Generates a comprehensive pre-proposal audit checklist report in Markdown format based on institutional SA2-01A rules and Canvas rubrics. | `proposal_title`, `student_name`, `student_id`, `metadata`, `sections`, `odt_filename`, `variabel_independen`, `variabel_dependen`, `output_markdown_filename` |
 | `validate_canvas_compliance` | Validates research proposal rigor against standard academic research design principles. | `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `single_problem_only` |
-| `get_canvas_guidelines` | Retrieves the complete rubric and checklist for academic research design criteria. | *(none)* |
+| `generate_rubric_checklist_report` | Generates a comprehensive academic audit checklist report in Markdown format based on standard evaluation rubrics. | `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` |
+| `get_canvas_guidelines` | Retrieves the complete rubric and checklist for academic research design criteria (Chapter 1-3 & SA2-01A). | *(none)* |
 | `generate_academic_proposal` | Assembles and generates a complete, publication-grade academic proposal DOCX file. | `metadata`, `bab1_data`, `bab2_subbab`, `bab3_subbab`, `daftar_referensi`, `output_filename` |
 | `generate_proposal_from_topic` | One-shot proposal generator combining research topic, CSV literature data, and paper-search results. | `topic`, `variabel_x`, `variabel_y`, `csv_filename`, `retrieved_papers`, `output_filename` |
 | `plan_proposal_research` | Analyzes a topic to derive variables (X & Y), single research question, and search queries for `paper-search` MCP. | `topic`, `bidang_kajian`, `variabel_x`, `variabel_y` |
 | `parse_literature_csv_data` | Parses a literature review or benchmark CSV file from workspace into DOCX comparison table and references. | `csv_filename`, `csv_content` |
-| `inspect_proposal_document` | Analyzes the structural health of a proposal document (paragraph count, table count, sections, words, heading tree). | `filename` (default: `"Proposal Skripsi v1.0.docx"`) |
+| `inspect_proposal_document` | Analyzes the structural health and word count budget of proposal documents (`.docx` or `.odt`). | `filename` (default: `"Proposal Skripsi v1.0.docx"`) |
 | `increment_proposal_version` | Duplicates active thesis proposal (.docx) to an updated version and records changelog entries in `version_history.json`. | `current_version`, `new_version`, `changelog` |
 | `increment_praproposal_version` | Duplicates active pre-proposal (.odt) to an updated version and records changelog entries in `version_history.json`. | `current_version`, `new_version`, `changelog`, `filename_prefix` |
 | `export_proposal_as_markdown` | Converts any DOCX proposal in the workspace into clean, structured Markdown. | `filename` |
@@ -120,141 +122,144 @@ Configuration in `mcp_config.json` for Python:
 
 ---
 
-## 📋 Sample Tool Invocation (`generate_academic_proposal`)
+## 🛠️ Available MCP Tools Reference
 
-Here is an example payload using fictional student and institutional data:
+Below is a detailed guide for all **13 MCP Tools** provided by the server, organized by function:
 
-```json
-{
-  "metadata": {
-    "judul": "OPTIMIZING DISTRIBUTED SENSOR NETWORK LIFETIME USING REINFORCEMENT LEARNING ROUTING ALGORITHMS",
-    "nama_mahasiswa": "Alex Mercer",
-    "nim": "STD-2026-94821",
-    "program_studi": "Department of Computer Science & Informatics",
-    "departemen": "School of Computing",
-    "fakultas": "Faculty of Engineering and Technology",
-    "universitas": "Metropolis Institute of Technology",
-    "kota": "Metropolis",
-    "tahun": "2026"
-  },
-  "bab1_data": {
-    "latar_belakang": [
-      "The rapid proliferation of Internet of Things (IoT) devices in environmental monitoring has introduced critical challenges regarding power efficiency and network longevity in wireless sensor networks (WSNs).",
-      "Conventional routing protocols, such as static shortest-path routing, frequently exhaust intermediate relay nodes prematurely, resulting in network fragmentation and degraded data reliability.",
-      "To overcome these operational constraints, this research proposes an adaptive reinforcement learning routing mechanism that dynamically balances energy expenditure across network nodes while sustaining throughput."
-    ],
-    "rumusan_masalah_pengantar": "Based on the operational challenges and efficiency gaps identified above, the primary research question is formulated as follows:",
-    "rumusan_masalah": "To what extent does the proposed reinforcement learning routing algorithm improve overall network lifetime and packet delivery ratio compared to conventional static routing protocols in large-scale wireless sensor networks?",
-    "rumusan_masalah_penjelasan": "This single research question evaluates the causal relationship between the independent variable (reinforcement learning routing mechanism) and key dependent performance indicators (network operational lifetime and packet delivery ratio).",
-    "tujuan_umum": "evaluate and quantify the network longevity and transmission efficiency improvements achieved by the reinforcement learning routing protocol compared to baseline routing approaches.",
-    "tujuan_khusus": [
-      "Analyze the energy consumption profiles and bottleneck factors in baseline sensor routing workflows.",
-      "Design and model the adaptive reinforcement learning routing algorithm.",
-      "Develop a proof-of-concept simulation environment for multi-hop sensor networks.",
-      "Evaluate network lifetime, packet delivery ratio, and convergence time through rigorous benchmark simulations."
-    ],
-    "manfaat": [
-      "For Sensor Network Practitioners: Provides an operational blueprint for resilient and energy-balanced wireless sensor deployments.",
-      "For Academic Researchers: Contributes empirical evidence and benchmark datasets regarding reinforcement learning applications in low-power communication systems."
-    ],
-    "batasan_masalah": [
-      "Evaluation is conducted within a simulated network environment consisting of 100 to 500 heterogeneous nodes.",
-      "Hardware-level physical layer modifications are outside the scope of this investigation.",
-      "Channel conditions are modeled based on standard log-distance path loss propagation."
-    ],
-    "sistematika_pembahasan": [
-      "CHAPTER 1 INTRODUCTION: Details background context, research problem formulation, objectives, practical and theoretical benefits, scope limitations, and outline.",
-      "CHAPTER 2 LITERATURE REVIEW: Synthesizes foundational networking concepts, reinforcement learning formulations, prior benchmark studies, and identified research gaps.",
-      "CHAPTER 3 METHODOLOGY: Defines research design, experimental testbed parameters, evaluation metrics, and timeline."
-    ]
-  },
-  "bab2_subbab": [
-    {
-      "title": "Wireless Sensor Network Routing Protocols",
-      "level": 2,
-      "paragraphs": [
-        "Routing protocols in sensor networks must strike a delicate balance between routing overhead and battery conservation. Standard multi-hop schemes often incur uneven drain rates on central clusters."
-      ]
+---
+
+### 📑 1. Document Generation Tools
+
+#### A. `generate_proposal_from_topic`
+One-shot generator that produces a complete 3-Chapter Thesis Proposal in `.docx` format directly from a topic, variable specifications, CSV literature, and/or retrieved papers.
+- **Parameters**: `topic` (str), `variabel_x` (str, opt), `variabel_y` (str, opt), `student_metadata` (dict, opt), `csv_filename` (str, opt), `csv_content` (str, opt), `retrieved_papers` (list, opt), `output_filename` (str, default: `"Proposal Skripsi v1.0.docx"`)
+- **Example Payload**:
+  ```json
+  {
+    "topic": "Optimizing Distributed Sensor Network Lifetime using Reinforcement Learning Routing Algorithms",
+    "variabel_x": "Adaptive Reinforcement Learning Q-Routing Mechanism",
+    "variabel_y": "Network Operational Longevity and Packet Delivery Ratio",
+    "csv_filename": "literature.csv",
+    "output_filename": "Proposal Skripsi v1.0.docx"
+  }
+  ```
+
+#### B. `generate_academic_proposal`
+Assembles a publication-grade academic proposal `.docx` file from explicit chapter structures (`metadata`, `bab1_data`, `bab2_subbab`, `bab3_subbab`, `daftar_referensi`).
+- **Parameters**: `metadata` (dict), `bab1_data` (dict), `bab2_subbab` (list), `bab3_subbab` (list), `daftar_referensi` (list), `output_filename` (str)
+
+#### C. `generate_praproposal_from_topic`
+One-shot generator that creates an official Pre-Proposal Form (`.odt`, format SA2-01A) directly from research topic inputs and applies automatic Canvas compliance auditing.
+- **Parameters**: `topic` (str), `variabel_x` (str, opt), `variabel_y` (str, opt), `student_metadata` (dict, opt), `csv_filename` (str, opt), `retrieved_papers` (list, opt), `output_filename` (str, default: `"Praproposal Skripsi v1.0.odt"`)
+- **Example Payload**:
+  ```json
+  {
+    "topic": "Optimasi Deteksi Anomali Jaringan IoT Menggunakan Federated Learning",
+    "variabel_x": "Algoritma Federated Learning Terdistribusi",
+    "variabel_y": "Akurasi Deteksi dan Efisiensi Komunikasi Jaringan IoT",
+    "student_metadata": {
+      "nama_mahasiswa": "Alex Mercer",
+      "nim": "225150200111000",
+      "jurusan": "Teknik Informatika",
+      "program_studi": "Teknik Informatika",
+      "keminatan": "Komputasi Cerdas",
+      "bidang_skripsi": "Artificial Intelligence & Data Science",
+      "nama_pembimbing": "Dr. Mahrus Ali, S.Kom., M.Kom."
     },
-    {
-      "title": "Reinforcement Learning in Dynamic Networks",
-      "level": 2,
-      "paragraphs": [
-        "Q-learning and policy-gradient algorithms enable decentralized agents to discover optimal forwarding policies through continuous environmental reward feedback."
-      ]
-    }
-  ],
-  "bab3_subbab": [
-    {
-      "title": "Simulation Design and Experimental Setup",
-      "level": 2,
-      "paragraphs": [
-        "The experimental framework is implemented using an event-driven network simulator modeling randomized node deployments and Poisson packet arrival processes."
-      ]
-    }
-  ],
-  "daftar_referensi": [
-    "Akyildiz, I.F., Su, W., Sankarasubramaniam, Y. & Cayirci, E., 2002. Wireless sensor networks: a survey. Computer Networks, 38(4), pp.393–422.",
-    "Sutton, R.S. & Barto, A.G., 2018. Reinforcement learning: An introduction. 2nd ed. Cambridge: MIT Press."
-  ],
-  "output_filename": "Proposal Skripsi v1.0.docx"
-}
-```
+    "output_filename": "Praproposal_SA2-01A_Alex_Mercer.odt"
+  }
+  ```
+
+#### D. `generate_academic_praproposal`
+Directly populates and compiles the official SA2-01A `.odt` form from structured `metadata` and `sections` dictionaries with automated canvas verification.
+- **Parameters**: `metadata` (dict), `sections` (dict), `output_filename` (str)
 
 ---
 
-## ⚡ One-Shot Proposal Generation (`generate_proposal_from_topic`)
+### 🧪 2. Research Canvas & Methodology Validation Tools
 
-Instead of writing out every chapter by hand, you can generate a complete proposal by prompting with just a **Topic**, an optional literature **CSV file**, or retrieved research papers:
+#### A. `validate_canvas_compliance` (Proposal 3-Bab Validation)
+Audits the methodological rigor of a proposal against standard Research Design Canvas rules.
+- **Parameters**: `rumusan_masalah` (str), `variabel_independen` (str), `variabel_dependen` (str), `tujuan_penelitian` (str), `manfaat_penelitian` (str), `single_problem_only` (bool, default: `true`)
+- **Validation Checks**:
+  - `[CLB04-01]`: Ensures strictly 1 measurable problem question.
+  - `[CLB04-02]`: Enforces non-descriptive, parameter-driven question formulation.
+  - `[CLB04-02 / M01-01]`: Verifies explicit Variable $X$ definition.
+  - `[CLB04-03 / M01-02]`: Verifies explicit Variable $Y$ definition.
+  - `[CLB05-01]`: Ensures objectives test variable outcomes.
+  - `[CLB06-02]`: Eliminates administrative clichés (*"syarat kelulusan", "menambah wawasan"*).
+- **Example Payload**:
+  ```json
+  {
+    "rumusan_masalah": "Sejauh manakah implementasi Adaptive Q-Routing mampu memperpanjang network lifetime dibandingkan protokol routing statis pada jaringan sensor nirkabel?",
+    "variabel_independen": "Adaptive Q-Routing Mechanism",
+    "variabel_dependen": "Network Operational Lifetime dan Packet Delivery Ratio",
+    "tujuan_penelitian": "Menguji dan mengukur peningkatan lifetime jaringan sensor melalui algoritma Q-Routing",
+    "manfaat_penelitian": "Memberikan panduan operasional bagi praktisi jaringan sensor dalam mengurangi kegagalan transmisi data"
+  }
+  ```
 
-```json
-{
-  "topic": "Optimizing Distributed Sensor Network Lifetime using Reinforcement Learning Routing Algorithms",
-  "variabel_x": "Reinforcement Learning Adaptive Q-Routing",
-  "variabel_y": "Network Operational Longevity and Packet Delivery Ratio",
-  "csv_filename": "literature.csv",
-  "output_filename": "Proposal Skripsi v1.0.docx"
-}
-```
+#### B. `validate_praproposal_compliance` (Pre-Proposal SA2-01A Validation)
+Validates pre-proposals against Research Canvas rules and strict SA2-01A word-count budgets (can evaluate in-memory payloads OR directly inspect an existing `.odt` file in the workspace).
+- **Parameters**: `metadata` (dict, opt), `sections` (dict, opt), `odt_filename` (str, opt), `variabel_independen` (str, opt), `variabel_dependen` (str, opt), `single_problem_only` (bool, default: `true`)
+- **Word Limits Enforced**:
+  - `[PRA-LB01]` Latar Belakang / Deskripsi Masalah: $\le 500$ words.
+  - `[PRA-LR01]` Landasan Kepustakaan: $\le 250$ words.
+  - `[PRA-MET01]` Rencana Metode Penelitian: $\le 250$ words.
+- **Example Payload (Validating from existing file)**:
+  ```json
+  {
+    "odt_filename": "Praproposal Skripsi v1.0.odt",
+    "variabel_independen": "Algoritma Federated Learning",
+    "variabel_dependen": "Akurasi Deteksi dan Komunikasi"
+  }
+  ```
 
-The server will automatically:
+#### C. `generate_rubric_checklist_report` (Proposal 3-Bab Audit Report)
+Generates a comprehensive Markdown audit report for the 3-Chapter Proposal across 17 rubric criteria (Chapter 1 `LB01-LB06`, Chapter 2 `LR01-LR06`, Chapter 3 `M01-M05`).
+- **Parameters**: `proposal_title`, `student_name`, `student_id`, `rumusan_masalah`, `variabel_independen`, `variabel_dependen`, `tujuan_penelitian`, `manfaat_penelitian`, `output_markdown_filename` (default: `"proposal_rubric_checklist_report.md"`)
 
-1. Formulate a single, measurable research question: *"Sejauh mana implementasi [X] mampu meningkatkan [Y] secara terukur..."*
-2. Parse the CSV file and generate the literature review comparison matrix (`tabel_tinjauan_pustaka`) and Harvard citations (`daftar_referensi`).
-3. Generate Chapters 1, 2, and 3 formatted according to academic guidelines.
-4. Run Research Design Canvas v2.0 validation checks.
-5. Save the final `.docx` directly into your mounted workspace.
+#### D. `generate_praproposal_rubric_checklist_report` (Pre-Proposal SA2-01A Audit Report)
+Generates an audit checklist Markdown report specifically for Form SA2-01A, featuring a dedicated **Word Count Budget Analysis** table and itemized criteria verification.
+- **Parameters**: `proposal_title` (opt), `student_name` (opt), `student_id` (opt), `metadata` (dict, opt), `sections` (dict, opt), `odt_filename` (opt), `variabel_independen` (opt), `variabel_dependen` (opt), `output_markdown_filename` (default: `"praproposal_rubric_checklist_report.md"`)
+
+#### E. `get_canvas_guidelines`
+Retrieves the complete standard rubric guidelines, evaluation criteria, and violation codes across Chapter 1, Chapter 2, Chapter 3, and Form SA2-01A.
+- **Parameters**: *(none)*
 
 ---
 
-## 📝 Sample Tool Invocation (`generate_praproposal_from_topic`)
+### 🔍 3. Document Inspection, Export & Version Tracking Tools
 
-Generate an official pre-proposal form document (`.odt`, format SA2-01A) directly from a topic prompt:
+#### A. `inspect_proposal_document`
+Performs deep structural health checks on either `.docx` proposals or `.odt` pre-proposals.
+- For `.docx`: Returns total paragraphs, tables, approximate words, heading tree (`BAB 1`, `1.1`, etc.), and table geometry.
+- For `.odt`: Returns word counts for each section (Latar Belakang, Landasan Kepustakaan, Metode) and validates word budget compliance against SA2-01A limits.
+- **Parameters**: `filename` (str, default: `"Proposal Skripsi v1.0.docx"`)
 
-```json
-{
-  "topic": "Optimasi Deteksi Anomali Jaringan IoT Menggunakan Federated Learning",
-  "variabel_x": "Algoritma Federated Learning Terdistribusi",
-  "variabel_y": "Akurasi Deteksi dan Efisiensi Komunikasi Jaringan IoT",
-  "student_metadata": {
-    "nama_mahasiswa": "Alex Mercer",
-    "nim": "225150200111000",
-    "jurusan": "Teknik Informatika",
-    "program_studi": "Teknik Informatika",
-    "keminatan": "Komputasi Cerdas",
-    "bidang_skripsi": "Artificial Intelligence & Data Science",
-    "jenis_penelitian": "Implementatif",
-    "tipe_penelitian": "Pengembangan Sistem & Komparasi Algoritma",
-    "asal_judul": "Usulan Sendiri",
-    "lokasi": "Malang",
-    "nama_pembimbing": "Dr. Mahrus Ali, S.Kom., M.Kom.",
-    "nip_pembimbing": "-"
-  },
-  "output_filename": "Praproposal_Skripsi_SA2-01A.odt"
-}
-```
+#### B. `export_proposal_as_markdown`
+Extracts formatted text, headings, captions, and reference lists from any `.docx` proposal into structured Markdown for fast LLM inspection.
+- **Parameters**: `filename` (str, default: `"Proposal Skripsi v1.0.docx"`)
+
+#### C. `increment_proposal_version`
+Duplicates an active proposal (`.docx`) to an incremented version and records change notes in `version_history.json`.
+- **Parameters**: `current_version` (e.g., `"v1.0"`), `new_version` (e.g., `"v1.1"`), `changelog` (str)
+
+#### D. `increment_praproposal_version`
+Duplicates an active pre-proposal (`.odt`) to an incremented version and records change notes in `version_history.json`.
+- **Parameters**: `current_version` (e.g., `"v1.0"`), `new_version` (e.g., `"v1.1"`), `changelog` (str), `filename_prefix` (str, default: `"Praproposal Skripsi"`)
 
 ---
+
+### 📊 4. Literature Planning & Ingestion Tools
+
+#### A. `plan_proposal_research`
+Analyzes a topic to derive variables $X$ & $Y$, a single measurable research question, and targeted academic search queries for `paper-search` MCP.
+- **Parameters**: `topic` (str), `bidang_kajian` (str, opt), `variabel_x` (str, opt), `variabel_y` (str, opt)
+
+#### B. `parse_literature_csv_data`
+Parses a CSV literature matrix into a formatted comparison table (`tabel_tinjauan_pustaka`), narrative summaries for Chapter 2, and standard Harvard/IEEE citations.
+- **Parameters**: `csv_filename` (str, opt), `csv_content` (str, opt)
 
 
 ## 📊 CSV Literature Format

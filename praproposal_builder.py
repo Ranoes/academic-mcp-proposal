@@ -234,3 +234,106 @@ def build_praproposal_odt(
             z_out.writestr(name, data)
 
     return output_path
+
+def extract_praproposal_from_odt(odt_path: str) -> Dict[str, Any]:
+    """
+    Mengekstrak metadata dan isi sections dari dokumen Pra-Proposal (.odt) SA2-01A.
+    """
+    if not os.path.exists(odt_path):
+        raise FileNotFoundError(f"Berkas ODT tidak ditemukan di {odt_path}")
+
+    with zipfile.ZipFile(odt_path, "r") as z_in:
+        content_xml = z_in.read("content.xml")
+
+    root = ET.fromstring(content_xml)
+    tables = root.findall(f".//{{{NAMESPACES['table']}}}table")
+
+    if len(tables) < 3:
+        raise ValueError("Format template SA2-01A tidak terdeteksi (tabel kurang dari 3).")
+
+    table_meta = tables[1]
+    table_sections = tables[2]
+
+    # Ekstraksi Metadata
+    meta_keys = [
+        "nama_mahasiswa", "nim", "jurusan", "program_studi", "keminatan",
+        "bidang_skripsi", "jenis_penelitian", "tipe_penelitian", "asal_judul", "judul"
+    ]
+    extracted_meta = {}
+    meta_rows = table_meta.findall(f"./{{{NAMESPACES['table']}}}table-row")
+    for idx, key in enumerate(meta_keys):
+        if idx < len(meta_rows):
+            cells = meta_rows[idx].findall(f"./{{{NAMESPACES['table']}}}table-cell")
+            if len(cells) >= 3:
+                p_elems = cells[2].findall(f".//{{{NAMESPACES['text']}}}p")
+                extracted_meta[key] = " ".join([p.text.strip() for p in p_elems if p.text])
+
+    # Ekstraksi Sections
+    sec_keys = [
+        (0, "latar_belakang"),
+        (1, "landasan_kepustakaan"),
+        (2, "rumusan_masalah"),
+        (3, "metode"),
+        (4, "daftar_pustaka")
+    ]
+    extracted_sections = {}
+    sec_rows = table_sections.findall(f"./{{{NAMESPACES['table']}}}table-row")
+    for row_idx, sec_name in sec_keys:
+        if row_idx < len(sec_rows):
+            cells = sec_rows[row_idx].findall(f"./{{{NAMESPACES['table']}}}table-cell")
+            if len(cells) >= 2:
+                p_elems = cells[1].findall(f".//{{{NAMESPACES['text']}}}p")
+                extracted_sections[sec_name] = [p.text.strip() for p in p_elems if p.text]
+
+    return {
+        "metadata": extracted_meta,
+        "sections": extracted_sections
+    }
+
+def inspect_praproposal_odt(odt_path: str) -> Dict[str, Any]:
+    """
+    Memeriksa struktur, kelengkapan data, dan jumlah kata dokumen Pra-Proposal (.odt).
+    """
+    if not os.path.exists(odt_path):
+        return {"error": f"Berkas {odt_path} tidak ditemukan."}
+
+    try:
+        extracted = extract_praproposal_from_odt(odt_path)
+        meta = extracted["metadata"]
+        secs = extracted["sections"]
+
+        def _count_words(lines: List[str]) -> int:
+            return sum(len(l.split()) for l in lines if l)
+
+        wc_lb = _count_words(secs.get("latar_belakang", []))
+        wc_lr = _count_words(secs.get("landasan_kepustakaan", []))
+        wc_met = _count_words(secs.get("metode", []))
+        dp_count = len(secs.get("daftar_pustaka", []))
+        rm_count = len(secs.get("rumusan_masalah", []))
+
+        return {
+            "file": os.path.basename(odt_path),
+            "document_type": "praproposal_sa2_01a",
+            "metadata": meta,
+            "word_counts": {
+                "latar_belakang": wc_lb,
+                "landasan_kepustakaan": wc_lr,
+                "metode": wc_met
+            },
+            "word_limits": {
+                "latar_belakang_limit": 500,
+                "landasan_kepustakaan_limit": 250,
+                "metode_limit": 250
+            },
+            "budget_compliance": {
+                "latar_belakang_ok": wc_lb <= 500 and wc_lb > 0,
+                "landasan_kepustakaan_ok": wc_lr <= 250 and wc_lr > 0,
+                "metode_ok": wc_met <= 250 and wc_met > 0
+            },
+            "total_references": dp_count,
+            "total_research_questions": rm_count,
+            "sections_extracted": list(secs.keys())
+        }
+    except Exception as e:
+        return {"error": f"Gagal menginspeksi berkas ODT: {str(e)}"}
+

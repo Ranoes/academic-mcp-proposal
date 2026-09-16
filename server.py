@@ -13,8 +13,10 @@ except ImportError:
     from mcp.server.fastmcp import FastMCP  # type: ignore
 from canvas_validator import (
     check_research_canvas,
+    check_praproposal_canvas,
     get_canvas_rubric,
-    generate_markdown_checklist_report
+    generate_markdown_checklist_report,
+    generate_praproposal_rubric_checklist_report
 )
 from builder_engine import (
     create_generic_proposal,
@@ -24,6 +26,8 @@ from builder_engine import (
 )
 from praproposal_builder import (
     build_praproposal_odt,
+    extract_praproposal_from_odt,
+    inspect_praproposal_odt,
     DEFAULT_PRA_TEMPLATE_PATH
 )
 from csv_ingestor import parse_literature_csv
@@ -112,9 +116,124 @@ def validate_canvas_compliance(
     )
 
 @mcp.tool()
+def validate_praproposal_compliance(
+    metadata: Optional[Dict[str, Any]] = None,
+    sections: Optional[Dict[str, Any]] = None,
+    odt_filename: Optional[str] = None,
+    variabel_independen: Optional[str] = None,
+    variabel_dependen: Optional[str] = None,
+    single_problem_only: bool = True
+) -> dict:
+    """
+    Memvalidasi kepatuhan naskah pra-proposal skripsi (Form SA2-01A) terhadap kaidah
+    Research Design Canvas dan batasan alokasi kata resmi:
+    - Latar Belakang / Deskripsi Masalah: maksimal 500 kata
+    - Landasan Kepustakaan: maksimal 250 kata
+    - Rencana Metode Penelitian: maksimal 250 kata
+    - Rumusan Masalah: tepat 1 pertanyaan terukur (CLB04-01 & CLB04-02)
+    - Variabel X & Y terdefinisi eksplisit
+    Dapat menerima payload data (metadata & sections) atau nama berkas .odt yang ada di workspace.
+    """
+    target_meta = dict(metadata or {})
+    target_sections = dict(sections or {})
+
+    if odt_filename:
+        odt_path = os.path.join(WORKSPACE_DIR, odt_filename)
+        if not os.path.exists(odt_path):
+            return {
+                "status": "ERROR",
+                "message": f"Berkas pra-proposal {odt_filename} tidak ditemukan di workspace."
+            }
+        try:
+            extracted = extract_praproposal_from_odt(odt_path)
+            if not target_meta:
+                target_meta = extracted["metadata"]
+            if not target_sections:
+                target_sections = extracted["sections"]
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "message": f"Gagal membaca berkas pra-proposal ODT: {str(e)}"
+            }
+
+    if not target_meta and not target_sections:
+        return {
+            "status": "ERROR",
+            "message": "Harap sertakan parameter metadata & sections atau odt_filename yang valid untuk divalidasi."
+        }
+
+    return check_praproposal_canvas(
+        metadata=target_meta,
+        sections=target_sections,
+        variabel_independen=variabel_independen,
+        variabel_dependen=variabel_dependen,
+        single_problem_only=single_problem_only
+    )
+
+@mcp.tool()
+def generate_praproposal_rubric_checklist_report(
+    proposal_title: Optional[str] = None,
+    student_name: Optional[str] = None,
+    student_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    sections: Optional[Dict[str, Any]] = None,
+    odt_filename: Optional[str] = None,
+    variabel_independen: Optional[str] = None,
+    variabel_dependen: Optional[str] = None,
+    output_markdown_filename: str = "praproposal_rubric_checklist_report.md",
+    save_to_workspace: bool = True
+) -> dict:
+    """
+    Menghasilkan laporan audit kepatuhan Pra-Proposal (SA2-01A) dalam format Markdown
+    berdasarkan rubrik evaluasi resmi dan batasan alokasi kata.
+    """
+    target_meta = dict(metadata or {})
+    target_sections = dict(sections or {})
+
+    if odt_filename:
+        odt_path = os.path.join(WORKSPACE_DIR, odt_filename)
+        if os.path.exists(odt_path):
+            try:
+                extracted = extract_praproposal_from_odt(odt_path)
+                if not target_meta:
+                    target_meta = extracted["metadata"]
+                if not target_sections:
+                    target_sections = extracted["sections"]
+            except Exception:
+                pass
+
+    if proposal_title:
+        target_meta["judul"] = proposal_title
+    if student_name:
+        target_meta["nama_mahasiswa"] = student_name
+    if student_id:
+        target_meta["nim"] = student_id
+
+    md_report = generate_praproposal_rubric_checklist_report(
+        metadata=target_meta,
+        sections=target_sections,
+        variabel_independen=variabel_independen,
+        variabel_dependen=variabel_dependen,
+        single_problem_only=True
+    )
+
+    saved_path = None
+    if save_to_workspace:
+        saved_path = os.path.join(WORKSPACE_DIR, output_markdown_filename)
+        with open(saved_path, "w", encoding="utf-8") as f:
+            f.write(md_report)
+
+    return {
+        "status": "SUCCESS",
+        "output_filename": output_markdown_filename,
+        "saved_path": saved_path,
+        "report_markdown": md_report
+    }
+
+@mcp.tool()
 def get_canvas_guidelines() -> dict:
     """
-    Mengambil rubrik lengkap checklist Research Design Model Canvas v2.0 (LB01-LB06, LR01-LR06, M01-M05)
+    Mengambil rubrik lengkap checklist Research Design Model Canvas v2.0 (LB01-LB06, LR01-LR06, M01-M05, PRA_Praproposal_SA2_01A)
     sebagai panduan bagi pengguna atau asisten AI dalam menyusun naskah ilmiah.
     """
     return get_canvas_rubric()
@@ -165,11 +284,13 @@ def generate_academic_proposal(
 @mcp.tool()
 def inspect_proposal_document(filename: str = "Proposal Skripsi v1.0.docx") -> dict:
     """
-    Memeriksa struktur dokumen proposal skripsi (.docx) di dalam workspace.
-    Mengembalikan informasi: jumlah paragraf, tabel, seksi, perkiraan kata, dan daftar heading bab/subbab.
+    Memeriksa struktur dokumen proposal (.docx) atau pra-proposal (.odt) di dalam workspace.
+    Mengembalikan informasi: jumlah paragraf, tabel, kata, alokasi budget kata, dan kelengkapan struktur.
     """
-    docx_path = os.path.join(WORKSPACE_DIR, filename)
-    return inspect_doc(docx_path)
+    file_path = os.path.join(WORKSPACE_DIR, filename)
+    if filename.lower().endswith(".odt"):
+        return inspect_praproposal_odt(file_path)
+    return inspect_doc(file_path)
 
 @mcp.tool()
 def increment_proposal_version(
@@ -584,6 +705,13 @@ def generate_academic_praproposal(
             tpl_path = custom_p
 
     try:
+        # Validasi Kepatuhan Canvas & Alokasi Kata SA2-01A
+        canvas_check = check_praproposal_canvas(
+            metadata=metadata,
+            sections=sections,
+            single_problem_only=True
+        )
+
         res_path = build_praproposal_odt(
             metadata=metadata,
             sections=sections,
@@ -602,6 +730,7 @@ def generate_academic_praproposal(
             "status": "SUCCESS",
             "output_filename": output_filename,
             "saved_path": res_path,
+            "canvas_compliance": canvas_check,
             "message": f"Dokumen pra-proposal berhasil dibuat di {output_filename}"
         }
     except Exception as e:
@@ -704,14 +833,12 @@ def generate_praproposal_from_topic(
         metode_notes=metode_penelitian_notes
     )
 
-    # 6. Validasi Research Canvas
-    rm_str = "\n".join(pra_payload["sections"]["rumusan_masalah"])
-    canvas_check = check_research_canvas(
-        rumusan_masalah=rm_str,
+    # 6. Validasi Research Canvas Khusus Pra-Proposal SA2-01A
+    canvas_check = check_praproposal_canvas(
+        metadata=pra_payload["metadata"],
+        sections=pra_payload["sections"],
         variabel_independen=vx,
         variabel_dependen=vy,
-        tujuan_penelitian=plan["tujuan_umum"],
-        manfaat_penelitian="Membantu pengambil keputusan dalam optimasi kinerja sistem",
         single_problem_only=True
     )
 
