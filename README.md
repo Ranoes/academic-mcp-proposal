@@ -34,6 +34,7 @@
 
 | Tool | Description | Key Parameters |
 | :--- | :--- | :--- |
+| `generate_topic_from_artefact` | Synthesizes a structured academic research proposal topic (Title, 3-dimensional Urgency, Single Measurable Problem, Variables X & Y, Objectives, Benefits, and Canvas Audit) from any real-world artifact (news, case stories, problem documents, OCR/image descriptions). | `artefact_content`, `artefact_type`, `artefact_title`, `bidang_kajian`, `proposed_method_or_x`, `target_metric_or_y`, `institutional_focus` |
 | `generate_diagram_image` | Generates high-resolution academic diagrams (Flowchart, Conceptual Framework, Layered Architecture), ensures `/asset` folder exists, and optionally embeds into target DOCX. | `diagram_type`, `title`, `steps_or_nodes`, `variabel_x`, `variabel_y`, `asset_folder`, `target_document_docx` |
 | `insert_diagram_to_document` | Inserts an existing diagram image from `/asset` into a proposal DOCX with official caption numbering (`Gambar X.Y <Judul>`). | `document_filename`, `image_filename_or_path`, `caption_title`, `chapter_num`, `figure_num` |
 | `generate_praproposal_from_topic` | One-shot generator for academic pre-proposal form (`.odt`, format SA2-01A) directly from topic, student metadata, CSV data, or paper-search results with automatic Canvas validation. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` |
@@ -126,7 +127,7 @@ Configuration in `mcp_config.json` for Python:
 
 ## 🛠️ Available MCP Tools Reference
 
-Below is a detailed guide for all **15 MCP Tools** provided by the server, organized by function:
+Below is a detailed guide for all **16 MCP Tools** provided by the server, organized by function:
 
 ---
 
@@ -255,11 +256,25 @@ Duplicates an active pre-proposal (`.odt`) to an incremented version and records
 
 ### 📊 4. Literature Planning & Ingestion Tools
 
-#### A. `plan_proposal_research`
+#### A. `generate_topic_from_artefact`
+Synthesizes a structured academic research proposal topic (Title, 3-dimensional Urgency, Single Measurable Problem, Variables X & Y, Objectives, Benefits, and Canvas Audit) from any real-world artifact (news articles, case stories, problem documents, OCR/image descriptions).
+- **Parameters**: `artefact_content` (str), `artefact_type` (str, default: `"general_text"`), `artefact_title` (str, opt), `bidang_kajian` (str, opt), `proposed_method_or_x` (str, opt), `target_metric_or_y` (str, opt), `institutional_focus` (str, opt)
+- **Example Payload**:
+  ```json
+  {
+    "artefact_type": "news",
+    "artefact_title": "Lonjakan Serangan Botnet IoT 2025",
+    "artefact_content": "Laporan Keamanan Siber menunjukkan lonjakan 300% serangan botnet DDoS pada gateway IoT karena tingginya false alarm dan latensi metode deteksi konvensional.",
+    "proposed_method_or_x": "Algoritma Federated Learning Terdistribusi",
+    "bidang_kajian": "Keamanan Siber & Jaringan Komputer"
+  }
+  ```
+
+#### B. `plan_proposal_research`
 Analyzes a topic to derive variables $X$ & $Y$, a single measurable research question, and targeted academic search queries for `paper-search` MCP.
 - **Parameters**: `topic` (str), `bidang_kajian` (str, opt), `variabel_x` (str, opt), `variabel_y` (str, opt)
 
-#### B. `parse_literature_csv_data`
+#### C. `parse_literature_csv_data`
 Parses a CSV literature matrix into a formatted comparison table (`tabel_tinjauan_pustaka`), narrative summaries for Chapter 2, and standard Harvard/IEEE citations.
 - **Parameters**: `csv_filename` (str, opt), `csv_content` (str, opt)
 

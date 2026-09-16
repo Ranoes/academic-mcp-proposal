@@ -5,6 +5,7 @@ menjadi struktur naskah proposal skripsi lengkap (Bab 1, Bab 2, Bab 3, tabel, da
 """
 import re
 from typing import Dict, Any, List, Optional, Tuple
+from canvas_validator import check_research_canvas
 
 def plan_research(
     topic: str,
@@ -514,4 +515,268 @@ def synthesize_praproposal_from_inputs(
             "daftar_pustaka": final_refs
         }
     }
+
+def generate_topic_from_artefact(
+    artefact_content: str,
+    artefact_type: str = "general_text",
+    artefact_title: Optional[str] = None,
+    bidang_kajian: Optional[str] = None,
+    proposed_method_or_x: Optional[str] = None,
+    target_metric_or_y: Optional[str] = None,
+    institutional_focus: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Menghasilkan usulan topik penelitian ilmiah yang terstruktur, lengkap dengan Judul,
+    Urgensi Penelitian, Rumusan Masalah Tunggal Terukur, Variabel X & Y, Tujuan, Manfaat,
+    serta Audit Kepatuhan Research Design Canvas (v2.0) secara otomatis berbasis artefak dunia nyata
+    (artikel berita, dokumen masalah, rekaman kasus, deskripsi citra/OCR, dsb.).
+    """
+    content_raw = artefact_content.strip()
+    if not content_raw:
+        content_raw = "Tantangan optimasi performa dan efisiensi sistem komputasi cerdas."
+
+    # 1. Identifikasi Bidang Kajian
+    content_lower = content_raw.lower()
+    title_lower = (artefact_title or "").lower()
+    combined_text = f"{title_lower} {content_lower}"
+
+    detected_domain = bidang_kajian
+    if not detected_domain:
+        if any(k in combined_text for k in ["keamanan", "cyber", "serangan", "malware", "ddos", "enkripsi", "intrusi", "firewall"]):
+            detected_domain = "Keamanan Siber & Jaringan Komputer"
+        elif any(k in combined_text for k in ["citra", "gambar", "kamera", "vision", "segmentasi", "yolo", "deteksi objek", "wajah"]):
+            detected_domain = "Computer Vision & Pengolahan Citra Digital"
+        elif any(k in combined_text for k in ["teks", "bahasa", "nlp", "sentimen", "chat", "terjemahan", "llm", "bert"]):
+            detected_domain = "Natural Language Processing & Kecerdasan Artifisial"
+        elif any(k in combined_text for k in ["sensor", "iot", "energi", "baterai", "node", "wsn", "mikrokontroler", "esp32"]):
+            detected_domain = "Internet of Things & Jaringan Sensor Nirkabel"
+        elif any(k in combined_text for k in ["kesehatan", "medis", "pasien", "penyakit", "diagnosis", "rekam medis", "dokter"]):
+            detected_domain = "Informatika Medis & Health Data Science"
+        elif any(k in combined_text for k in ["pertanian", "tanaman", "hama", "irigasi", "panen", "tanah", "pupuk"]):
+            detected_domain = "Smart Agriculture & Agroteknologi Cerdas"
+        elif any(k in combined_text for k in ["sistem informasi", "web", "aplikasi", "erp", "user experience", "ux", "bisnis"]):
+            detected_domain = "Rekayasa Perangkat Lunak & Sistem Informasi"
+        else:
+            detected_domain = "Teknologi Informasi & Komputasi Cerdas"
+
+    # 2. Identifikasi / Sintesis Variabel Independen (X - Metode/Algoritma/Intervensi)
+    var_x = proposed_method_or_x
+    if not var_x:
+        # Cari metode spesifik yang disebutkan di teks
+        method_candidates = []
+        if "federated learning" in combined_text:
+            method_candidates.append("Algoritma Federated Learning Terdistribusi")
+        if "yolo" in combined_text or "yolov8" in combined_text:
+            method_candidates.append("Arsitektur Deep Learning YOLOv8")
+        if "reinforcement learning" in combined_text or "q-learning" in combined_text:
+            method_candidates.append("Mekanisme Adaptive Q-Learning Routing")
+        if "transformer" in combined_text or "attention" in combined_text:
+            method_candidates.append("Model Transformer Berbasis Self-Attention Mechanism")
+        if "lstm" in combined_text or "gru" in combined_text:
+            method_candidates.append("Arsitektur Recurrent Neural Network (Bi-LSTM)")
+        if "cnn" in combined_text or "convolutional" in combined_text:
+            method_candidates.append("Deep Convolutional Neural Network (CNN)")
+        if "genetic algorithm" in combined_text or "genetika" in combined_text:
+            method_candidates.append("Algoritma Optimasi Genetika (Genetic Algorithm)")
+        if "random forest" in combined_text or "ensemble" in combined_text:
+            method_candidates.append("Ensemble Learning Random Forest & Gradient Boosting")
+        if "blockchain" in combined_text:
+            method_candidates.append("Protokol Konsensus Smart Contract Blockchain")
+
+        if method_candidates:
+            var_x = method_candidates[0]
+        else:
+            # Sintesis metode canggih sesuai domain
+            if "Vision" in detected_domain:
+                var_x = "Model Multi-Scale Deep Convolutional Neural Network"
+            elif "Natural Language" in detected_domain:
+                var_x = "Arsitektur Transformer Berbasis Contextual Embedding"
+            elif "IoT" in detected_domain or "Sensor" in detected_domain:
+                var_x = "Algoritma Adaptive Clustering & Energy-Efficient Routing"
+            elif "Keamanan" in detected_domain:
+                var_x = "Model Hybrid Deep Learning & Anomaly Detection Engine"
+            elif "Medis" in detected_domain:
+                var_x = "Deep Learning ResNet Berbasis Attention Transfer"
+            elif "Agriculture" in detected_domain:
+                var_x = "Algoritma Computer Vision Berbasis Lightweight CNN"
+            else:
+                var_x = "Pendekatan Machine Learning Berbasis Ensemble Optimization"
+
+    # 3. Identifikasi / Sintesis Variabel Dependen (Y - Metrik Kinerja / Masalah Sasaran)
+    var_y = target_metric_or_y
+    if not var_y:
+        metric_candidates = []
+        if any(k in combined_text for k in ["akurasi", "ketepatan", "presisi", "f1-score"]):
+            metric_candidates.append("Akurasi Deteksi dan Tingkat Presisi Klasifikasi")
+        if any(k in combined_text for k in ["energi", "baterai", "daya", "konsumsi"]):
+            metric_candidates.append("Efisiensi Konsumsi Energi dan Network Lifetime")
+        if any(k in combined_text for k in ["latensi", "latency", "waktu tanggap", "kecepatan", "delay"]):
+            metric_candidates.append("Latensi Pemrosesan dan Throughput Komputasi")
+        if any(k in combined_text for k in ["intrusi", "kebocoran", "anomali", "serangan"]):
+            metric_candidates.append("Sensitivitas Deteksi Anomali dan False Positive Rate")
+        if any(k in combined_text for k in ["segmentasi", "lokalisasi", "iou"]):
+            metric_candidates.append("Mean Average Precision (mAP) dan Skor IoU")
+
+        if metric_candidates:
+            var_y = metric_candidates[0]
+        else:
+            if "Vision" in detected_domain:
+                var_y = "Mean Average Precision (mAP) dan Kecepatan Inferensi Real-Time"
+            elif "Natural Language" in detected_domain:
+                var_y = "Akurasi Klasifikasi Semantik dan F1-Score"
+            elif "IoT" in detected_domain:
+                var_y = "Masa Hidup Jaringan (Network Lifetime) dan Packet Delivery Ratio"
+            elif "Keamanan" in detected_domain:
+                var_y = "Tingkat Akurasi Deteksi Ancaman dan Minimasi False Alarm Rate"
+            elif "Medis" in detected_domain:
+                var_y = "Sensitivitas Diagnostik dan Spesifisitas Klasifikasi Medis"
+            elif "Agriculture" in detected_domain:
+                var_y = "Akurasi Identifikasi Penyakit dan Waktu Pemrosesan"
+            else:
+                var_y = "Efektivitas Kinerja Sistem dan Akurasi Prediksi Kuantitatif"
+
+    # 4. Konteks Lingkup / Studi Kasus
+    context_scope = institutional_focus
+    if not context_scope:
+        if artefact_title:
+            context_scope = artefact_title.strip()
+        else:
+            first_sentence = content_raw.split(".")[0].strip()
+            if len(first_sentence) > 15 and len(first_sentence) < 80:
+                context_scope = first_sentence
+            else:
+                context_scope = f"Studi Kasus Lingkungan {detected_domain}"
+
+    # 5. Sintesis Urgensi Penelitian (Latar Belakang Masalah Faktual, Urgensi Teknis, Dampak)
+    clean_snippet = content_raw[:350].strip()
+    if not clean_snippet.endswith("."):
+        clean_snippet += "..."
+
+    urgensi_fenomena = (
+        f"Berdasarkan fenomena empiris pada artefak sumber ({artefact_type}): {clean_snippet} "
+        f"Kondisi ini memperlihatkan adanya kesenjangan nyata antara target keandalan yang diharapkan pada "
+        f"{var_y} dengan kenyataan operasional di lapangan saat ini."
+    )
+
+    urgensi_teknis = (
+        f"Pendekatan konvensional atau metode statis baseline yang selama ini diterapkan menghadapi keterbatasan "
+        f"dalam menangani kompleksitas data, variabilitas kondisi operasional, serta kebutuhan adaptabilitas tinggi. "
+        f"Oleh karena itu, diperlukan intervensi teknologi mutakhir melalui {var_x} yang memiliki kapasitas adaptif "
+        f"untuk mengatasi bottleneck teknis tersebut secara terukur."
+    )
+
+    urgensi_dampak = (
+        f"Apabila permasalahan pada {var_y} ini tidak segera diintervensi dengan solusi komputasi cerdas, "
+        f"maka akan timbul degradasi performa sistem yang berkepanjangan, peningkatan risiko kerugian operasional, "
+        f"serta ketidakefisienan alokasi sumber daya."
+    )
+
+    # 6. Formulasi Judul Formal Akademik
+    # Standar Judul: Jelas, memuat X dan Y, tanpa singkatan ambigu
+    judul_utama = f"OPTIMASI {var_y.upper()} MENGGUNAKAN {var_x.upper()} PADA {context_scope.upper()}"
+    judul_alt_1 = f"PENERAPAN {var_x.title()} UNTUK PENINGKATAN {var_y.title()} PADA {context_scope.title()}"
+    judul_alt_2 = f"ANALISIS KOMPARATIF PERFORMA DAN IMPLEMENTASI {var_x.title()} TERHADAP {var_y.title()}"
+    
+    # Title English
+    title_en = f"{var_x} for Enhancing {var_y} in {context_scope}"
+
+    # 7. Formulasi Rumusan Masalah Tunggal Terukur (Sesuai Kepatuhan Canvas CLB04-01 & CLB04-02)
+    rumusan_masalah = (
+        f"Sejauh manakah implementasi {var_x} mampu meningkatkan performa {var_y} "
+        f"secara signifikan dan terukur dibandingkan dengan metode baseline konvensional pada {context_scope}?"
+    )
+
+    # 8. Tujuan Penelitian (Umum & Khusus 4 Tahap)
+    tujuan_umum = (
+        f"menganalisis, merancang, mengimplementasikan, dan menguji efektivitas {var_x} "
+        f"dalam mengoptimalkan {var_y} pada {context_scope}."
+    )
+    tujuan_khusus = [
+        f"Mengidentifikasi kendala utama, karakteristik data, dan baseline performa awal pada {var_y}.",
+        f"Merancang dan memodelkan arsitektur serta mekanisme kerja {var_x}.",
+        f"Mengimplementasikan model {var_x} ke dalam lingkungan pengujian yang representatif.",
+        f"Mengevaluasi dan membandingkan performa {var_y} menggunakan metrik kuantitatif terstandar terhadap metode acuan."
+    ]
+
+    # 9. Manfaat Penelitian (Praktis & Akademis, Bebas Klise Sesuai CLB06-01 & CLB06-02)
+    manfaat_praktis = (
+        f"Memberikan solusi teknologi terukur dan pedoman teknis siap terap bagi praktisi serta pengembang sistem "
+        f"dalam mengatasi kendala {var_y} melalui pemanfaatan {var_x}."
+    )
+    manfaat_akademis = (
+        f"Memberikan kontribusi empiris terhadap khazanah literatur ilmiah di bidang {detected_domain} "
+        f"mengenai efektivitas dan batas kapabilitas {var_x} terhadap optimalisasi {var_y}."
+    )
+
+    # 10. Batasan Masalah
+    batasan_masalah = [
+        f"Penelitian difokuskan pada implementasi dan pengujian {var_x} pada skenario {context_scope}.",
+        f"Evaluasi keberhasilan dibatasi pada pengukuran parameter kuantitatif {var_y}.",
+        f"Data pengujian dan benchmark disesuaikan dengan karakteristik permasalahan pada artefak sumber.",
+        f"Aspek komputasi diuji pada lingkungan komputasi terstandar dengan parameter yang telah ditentukan."
+    ]
+
+    # 11. Audit Kepatuhan Research Design Canvas (v2.0)
+    canvas_audit = check_research_canvas(
+        rumusan_masalah=rumusan_masalah,
+        variabel_independen=var_x,
+        variabel_dependen=var_y,
+        tujuan_penelitian=tujuan_umum,
+        manfaat_penelitian=f"{manfaat_praktis}; {manfaat_akademis}",
+        single_problem_only=True
+    )
+
+    # 12. Kueri Pencarian Literatur untuk paper-search MCP
+    q_base = f"{var_x} {var_y}"
+    queries = {
+        "search_papers": q_base,
+        "arxiv": f"{var_x} AND {var_y}",
+        "google_scholar": f'"{var_x}" "{var_y}"',
+        "semantic_scholar": f"{var_x} {var_y} benchmark performance",
+        "crossref": q_base
+    }
+
+    return {
+        "status": "SUCCESS",
+        "artefact_summary": {
+            "type": artefact_type,
+            "title": artefact_title or "(Tanpa Judul)",
+            "domain": detected_domain,
+            "context_scope": context_scope
+        },
+        "judul_usulan": {
+            "judul_utama": judul_utama,
+            "judul_alternatif_1": judul_alt_1,
+            "judul_alternatif_2": judul_alt_2,
+            "title_english": title_en
+        },
+        "urgensi_penelitian": {
+            "latar_belakang_fenomena": urgensi_fenomena,
+            "urgensi_teknis_dan_teoritis": urgensi_teknis,
+            "dampak_jika_tidak_diselesaikan": urgensi_dampak
+        },
+        "rumusan_masalah": rumusan_masalah,
+        "variabel_penelitian": {
+            "variabel_independen_x": var_x,
+            "variabel_dependen_y": var_y,
+            "konteks_lingkup": context_scope
+        },
+        "tujuan_penelitian": {
+            "tujuan_umum": tujuan_umum,
+            "tujuan_khusus": tujuan_khusus
+        },
+        "manfaat_penelitian": {
+            "manfaat_praktis": manfaat_praktis,
+            "manfaat_akademis": manfaat_akademis
+        },
+        "batasan_masalah": batasan_masalah,
+        "canvas_compliance_audit": canvas_audit,
+        "search_queries_for_paper_search": queries,
+        "recommended_next_steps": [
+            "1. Lakukan verifikasi dan konfirmasi data diri mahasiswa/dosen pembimbing.",
+            "2. Gunakan query pencarian di atas pada MCP paper-search untuk mengumpulkan literatur acuan terkini.",
+            "3. Panggil generate_praproposal_from_topic untuk menyusun formulir Pra-Proposal SA2-01A (.odt), atau generate_proposal_from_topic untuk naskah proposal 3 Bab (.docx)."
+        ]
+    }
+
 

@@ -109,9 +109,10 @@ graph TD
   - Pemetaan kolom cerdas (*fuzzy column finder*) untuk mendeteksi variasi nama kolom seperti *Penulis / Author, Tahun / Year, Judul / Title, Metode / Algoritma, Hasil / Metric, Kelemahan / Gap*.
   - Menghasilkan struktur output berupa tabel perbandingan untuk Bab 2, ringkasan naratif sintesis per studi, dan daftar pustaka standar.
 
-### 3.6. `topic_synthesizer.py` (Sintesis & Perancangan Riset AI)
-- **Fungsi**: Mentransformasikan ide/topik penelitian mentah menjadi struktur proposal komprehensif.
+### 3.6. `topic_synthesizer.py` (Sintesis & Perancangan Riset AI Berbasis Artefak)
+- **Fungsi**: Mentransformasikan ide mentah atau berbagai artefak dunia nyata (artikel berita, dokumen masalah, rekaman kasus lapangan, deskripsi/OCR citra) menjadi usulan topik penelitian ilmiah komprehensif yang selaras dengan *Research Design Model Canvas*.
 - **Fitur Utama**:
+  - `generate_topic_from_artefact`: Menghasilkan paket usulan lengkap meliputi Judul Akademik (Indonesia & English), Urgensi Penelitian (Latar Belakang Fenomena, Urgensi Teknis/Teoretis, Dampak Risiko), Rumusan Masalah Tunggal Terukur, Variabel $X$ & $Y$, Tujuan (Umum & Khusus), Manfaat Bebas Klise, Batasan Masalah, serta Audit Kepatuhan Canvas otomatis.
   - `plan_research`: Menganalisis topik untuk menurunkan variabel $X$ dan $Y$, rumusan masalah tunggal, serta kata kunci pencarian akademik untuk diteruskan ke MCP `paper-search`.
   - `synthesize_proposal_from_inputs`: Membangun draf lengkap Bab 1 (Latar Belakang, Rumusan Masalah, Tujuan Umum & Khusus, Manfaat, Batasan), Bab 2 (Landasan Teori, Telaah Pustaka Komparatif), dan Bab 3 (Alur Penelitian, Pengumpulan Data, Perancangan Solusi, Pengujian & Metrik Evaluasi).
 ### 3.7. `diagram_generator.py` (Mesin Pembuat Diagram Ilmiah & Manajemen Asset)
@@ -136,6 +137,7 @@ graph TD
 
 | Nama Tool | Deskripsi | Parameter Utama | Output |
 | :--- | :--- | :--- | :--- |
+| `generate_topic_from_artefact` | Menghasilkan usulan topik penelitian ilmiah komprehensif (Judul, Urgensi, Rumusan Masalah, Variabel X/Y, Tujuan, Manfaat, dan Audit Canvas) berbasis artefak (berita, dokumen, cerita kasus, deskripsi citra/OCR). | `artefact_content`, `artefact_type`, `artefact_title`, `bidang_kajian`, `proposed_method_or_x`, `target_metric_or_y`, `institutional_focus` | Paket usulan topik, urgensi 3-dimensi, rumusan masalah tunggal terukur, variabel, tujuan, manfaat, audit canvas (100%), kueri paper-search |
 | `generate_math_formula_image` | Merender rumus matematika LaTeX ke citra PNG transparan (300 DPI) di `/asset`, dengan penomoran resmi `(X.Y)` dan opsi langsung disisipkan ke naskah proposal DOCX. | `latex_code`, `formula_title`, `chapter_num`, `formula_num`, `variable_definitions`, `asset_folder`, `target_document_docx` | Status, nomor persamaan `(X.Y)`, path di `/asset`, info penyisipan |
 | `insert_math_formula_to_document` | Menyisipkan citra rumus matematika dari `/asset` ke dalam naskah proposal DOCX dengan layout tabel borderless dan keterangan variabel. | `document_filename`, `image_filename_or_path`, `chapter_num`, `formula_num`, `intro_text`, `variable_definitions` | Status, path dokumen, nomor persamaan |
 | `generate_diagram_image` | Menghasilkan gambar diagram (Flowchart, Kerangka Konseptual, Arsitektur), memastikan folder `/asset` dibuat, dan dapat langsung menyisipkan ke dokumen DOCX. | `diagram_type`, `title`, `steps_or_nodes`, `variabel_x`, `variabel_y`, `asset_folder`, `target_document_docx` | Status, path berkas di `/asset`, info penyisipan dokumen |

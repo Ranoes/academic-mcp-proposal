@@ -57,6 +57,7 @@ from praproposal_builder import (
 from csv_ingestor import parse_literature_csv
 from topic_synthesizer import (
     plan_research,
+    generate_topic_from_artefact as synth_topic_from_artefact,
     synthesize_proposal_from_inputs,
     synthesize_praproposal_from_inputs,
     check_missing_student_metadata
@@ -618,6 +619,39 @@ def export_proposal_as_markdown(filename: str = "Proposal Skripsi v1.0.docx") ->
         "filename": filename,
         "markdown_content": "\n".join(md_lines)
     }
+
+@mcp.tool()
+def generate_topic_from_artefact(
+    artefact_content: str,
+    artefact_type: str = "general_text",
+    artefact_title: Optional[str] = None,
+    bidang_kajian: Optional[str] = None,
+    proposed_method_or_x: Optional[str] = None,
+    target_metric_or_y: Optional[str] = None,
+    institutional_focus: Optional[str] = None
+) -> dict:
+    """
+    Menghasilkan usulan topik penelitian ilmiah komprehensif berbasis artefak dunia nyata
+    (artikel berita, rekaman kasus, dokumen masalah, transkrip OCR / deskripsi citra, cerita lapangan, dsb.).
+    Secara otomatis menghasilkan:
+    1. Judul Formal Akademik (Bahasa Indonesia & English).
+    2. Urgensi Penelitian (Latar Belakang Fenomena, Urgensi Teknis/Teoretis, Dampak Risiko).
+    3. Rumusan Masalah Tunggal Terukur (Sesuai kaidah Research Design Canvas).
+    4. Variabel Independen (X) dan Variabel Dependen (Y).
+    5. Tujuan Penelitian (Umum & Khusus 4 Tahap).
+    6. Manfaat Penelitian (Praktis & Akademis, bebas dari klausul klise).
+    7. Batasan Masalah & Kueri Pencarian Literatur untuk paper-search MCP.
+    8. Hasil Audit Kepatuhan Langsung terhadap Research Design Canvas (v2.0).
+    """
+    return synth_topic_from_artefact(
+        artefact_content=artefact_content,
+        artefact_type=artefact_type,
+        artefact_title=artefact_title,
+        bidang_kajian=bidang_kajian,
+        proposed_method_or_x=proposed_method_or_x,
+        target_metric_or_y=target_metric_or_y,
+        institutional_focus=institutional_focus
+    )
 
 @mcp.tool()
 def plan_proposal_research(
