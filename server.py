@@ -640,22 +640,27 @@ def generate_topic_from_artefact(
     bidang_kajian: Optional[str] = None,
     proposed_method_or_x: Optional[str] = None,
     target_metric_or_y: Optional[str] = None,
-    institutional_focus: Optional[str] = None
+    institutional_focus: Optional[str] = None,
+    output_markdown_filename: Optional[str] = "usulan_topik_riset.md",
+    save_to_workspace: bool = True
 ) -> dict:
     """
     Menghasilkan usulan topik penelitian ilmiah komprehensif berbasis artefak dunia nyata
-    (artikel berita, rekaman kasus, dokumen masalah, transkrip OCR / deskripsi citra, cerita lapangan, dsb.).
-    Secara otomatis menghasilkan:
+    (artikel berita, rekaman kasus, dokumen masalah, transkrip OCR / deskripsi citra, cerita lapangan, dsb.)
+    dan melaporkannya secara otomatis ke dalam berkas Markdown (.md) di workspace.
+    
+    Menghasilkan:
     1. Judul Formal Akademik (Bahasa Indonesia & English).
-    2. Urgensi Penelitian (Latar Belakang Fenomena, Urgensi Teknis/Teoretis, Dampak Risiko).
+    2. Urgensi Penelitian 3-Dimensi (Latar Belakang Fenomena, Urgensi Teknis/Teoretis, Dampak Risiko).
     3. Rumusan Masalah Tunggal Terukur (Sesuai kaidah Research Design Canvas).
     4. Variabel Independen (X) dan Variabel Dependen (Y).
     5. Tujuan Penelitian (Umum & Khusus 4 Tahap).
     6. Manfaat Penelitian (Praktis & Akademis, bebas dari klausul klise).
     7. Batasan Masalah & Kueri Pencarian Literatur untuk paper-search MCP.
-    8. Hasil Audit Kepatuhan Langsung terhadap Research Design Canvas (v2.0).
+    8. Laporan Evaluasi Audit Kepatuhan terhadap Research Design Canvas (v2.0).
+    9. File Markdown (.md) laporan usulan topik di workspace.
     """
-    return synth_topic_from_artefact(
+    topic_res = synth_topic_from_artefact(
         artefact_content=artefact_content,
         artefact_type=artefact_type,
         artefact_title=artefact_title,
@@ -664,6 +669,21 @@ def generate_topic_from_artefact(
         target_metric_or_y=target_metric_or_y,
         institutional_focus=institutional_focus
     )
+
+    md_content = topic_res.get("markdown_report", "")
+    saved_path = None
+
+    if save_to_workspace and output_markdown_filename:
+        file_path = os.path.join(WORKSPACE_DIR, output_markdown_filename)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(md_content)
+        saved_path = file_path
+
+    # Gabungkan metadata output file ke dalam respons
+    result = dict(topic_res)
+    result["output_markdown_filename"] = output_markdown_filename if save_to_workspace else None
+    result["saved_path"] = saved_path
+    return result
 
 @mcp.tool()
 def plan_proposal_research(

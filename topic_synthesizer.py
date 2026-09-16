@@ -748,7 +748,7 @@ def generate_topic_from_artefact(
         "crossref": q_base
     }
 
-    return {
+    res_dict = {
         "status": "SUCCESS",
         "artefact_summary": {
             "type": artefact_type,
@@ -790,5 +790,108 @@ def generate_topic_from_artefact(
             "3. Panggil generate_praproposal_from_topic untuk menyusun formulir Pra-Proposal SA2-01A (.odt), atau generate_proposal_from_topic untuk naskah proposal 3 Bab (.docx)."
         ]
     }
+
+    # Format laporan markdown lengkap
+    res_dict["markdown_report"] = format_topic_artefact_as_markdown(res_dict)
+    return res_dict
+
+def format_topic_artefact_as_markdown(topic_data: Dict[str, Any]) -> str:
+    """
+    Mengonversi struktur data hasil sintesis topik dari artefak menjadi laporan Markdown terstruktur,
+    lengkap dengan ringkasan artefak, judul usulan, urgensi 3-dimensi, rumusan masalah,
+    variabel, tujuan, manfaat, batasan masalah, audit canvas, dan kueri literatur.
+    """
+    art_sum = topic_data.get("artefact_summary", {})
+    judul = topic_data.get("judul_usulan", {})
+    urgensi = topic_data.get("urgensi_penelitian", {})
+    vars_data = topic_data.get("variabel_penelitian", {})
+    tujuan = topic_data.get("tujuan_penelitian", {})
+    manfaat = topic_data.get("manfaat_penelitian", {})
+    batasan = topic_data.get("batasan_masalah", [])
+    audit = topic_data.get("canvas_compliance_audit", {})
+    queries = topic_data.get("search_queries_for_paper_search", {})
+    next_steps = topic_data.get("recommended_next_steps", [])
+
+    score = audit.get("compliance_score_percent", 100)
+    status_badge = "🟢 **APPROVED (Compliant with Research Design Canvas)**" if audit.get("status") == "APPROVED" else "🟡 **NEEDS REVISION**"
+
+    md = []
+    md.append("# 📑 Dokumen Usulan Topik Penelitian Skripsi\n")
+    md.append("> *Dihasilkan secara otomatis oleh Academic Proposal MCP Server berdasarkan sintesis artefak dan kaidah Research Design Model Canvas v2.0.*\n")
+    
+    md.append("## 📌 1. Ringkasan Artefak Sumber & Lingkup")
+    md.append("| Properti | Rincian |")
+    md.append("| :--- | :--- |")
+    md.append(f"| **Tipe Artefak** | `{art_sum.get('type', '-')}` |")
+    md.append(f"| **Judul / Label Artefak** | {art_sum.get('title', '-')} |")
+    md.append(f"| **Bidang Kajian / Domain** | {art_sum.get('domain', '-')} |")
+    md.append(f"| **Konteks / Skenario Riset** | {art_sum.get('context_scope', '-')} |")
+    md.append(f"| **Skor Kepatuhan Canvas** | **{score}%** ({status_badge}) |\n")
+
+    md.append("## 🎯 2. Formulasi Judul Penelitian (Standar Akademik)")
+    md.append(f"- **Judul Utama (Rekomendasi)**:\n  ### `{judul.get('judul_utama', '-')}`")
+    md.append(f"- **Judul Alternatif 1**: {judul.get('judul_alternatif_1', '-')}")
+    md.append(f"- **Judul Alternatif 2**: {judul.get('judul_alternatif_2', '-')}")
+    md.append(f"- **Title (English)**: *\"{judul.get('title_english', '-')}\"*\n")
+
+    md.append("## 🔬 3. Identifikasi Variabel Penelitian (Framework $X \\rightarrow Y$)")
+    md.append("| Elemen Metodologi | Nama Variabel & Definisi Operasional |")
+    md.append("| :--- | :--- |")
+    md.append(f"| **Variabel Independen ($X$)** *(Metode / Algoritma / Intervensi)* | **{vars_data.get('variabel_independen_x', '-')}** |")
+    md.append(f"| **Variabel Dependen ($Y$)** *(Parameter Kinerja / Sasaran)* | **{vars_data.get('variabel_dependen_y', '-')}** |")
+    md.append(f"| **Lingkup / Konteks Pengujian** | {vars_data.get('konteks_lingkup', '-')} |\n")
+
+    md.append("## 🚨 4. Urgensi Penelitian (3 Dimensi Komprehensif)")
+    md.append(f"### A. Latar Belakang Fenomena Empiris\n{urgensi.get('latar_belakang_fenomena', '-')}\n")
+    md.append(f"### B. Urgensi Teknis dan Teoretis\n{urgensi.get('urgensi_teknis_dan_teoritis', '-')}\n")
+    md.append(f"### C. Dampak Jika Masalah Dibiarkan\n{urgensi.get('dampak_jika_tidak_diselesaikan', '-')}\n")
+
+    md.append("## ❓ 5. Rumusan Masalah Tunggal Terukur")
+    md.append(f"> **{topic_data.get('rumusan_masalah', '-')}**\n")
+    md.append("*Keterangan: Rumusan masalah dirancang non-deskriptif, tunggal (CLB04-01), dan berfokus pada pengujian parameter terukur (CLB04-02).*\n")
+
+    md.append("## 🎯 6. Tujuan Penelitian")
+    md.append(f"### Tujuan Umum\nSecara umum, penelitian ini bertujuan untuk {tujuan.get('tujuan_umum', '-')}\n")
+    md.append("### Tujuan Khusus (4 Tahapan Sistematis)")
+    for i, t in enumerate(tujuan.get("tujuan_khusus", []), start=1):
+        md.append(f"{i}. {t}")
+    md.append("")
+
+    md.append("## 💡 7. Manfaat Penelitian (Bebas Klise)")
+    md.append(f"- **Manfaat Praktis (Bagi Praktisi / Industri)**:\n  {manfaat.get('manfaat_praktis', '-')}")
+    md.append(f"- **Manfaat Akademis (Bagi Pengembangan Ilmu)**:\n  {manfaat.get('manfaat_akademis', '-')}\n")
+
+    md.append("## 🚧 8. Batasan Masalah")
+    for b in batasan:
+        md.append(f"- {b}")
+    md.append("")
+
+    md.append("## 📊 9. Audit Kepatuhan Research Design Canvas (v2.0)")
+    md.append(f"- **Status Audit**: {status_badge}")
+    md.append(f"- **Skor Kepatuhan**: **{score}%**")
+    passed = audit.get("passed_checks", [])
+    if passed:
+        md.append("### Aturan yang Terpenuhi:")
+        for p in passed:
+            md.append(f"- ✅ `{p}`")
+    violations = audit.get("violations", [])
+    if violations:
+        md.append("### Catatan Perbaikan:")
+        for v in violations:
+            md.append(f"- ⚠️ `{v}`")
+    md.append("")
+
+    md.append("## 🔍 10. Rekomendasi Kueri Pencarian Literatur (`paper-search` MCP)")
+    md.append("| Mesin Pencari / Database | Kueri yang Dioptimalkan |")
+    md.append("| :--- | :--- |")
+    for engine, q in queries.items():
+        md.append(f"| **{engine}** | `{q}` |")
+    md.append("")
+
+    md.append("## 🚀 11. Langkah Selanjutnya yang Disarankan")
+    for step in next_steps:
+        md.append(f"- {step}")
+
+    return "\n".join(md)
 
 

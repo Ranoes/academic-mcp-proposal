@@ -34,7 +34,7 @@
 
 | Tool | Description | Key Parameters |
 | :--- | :--- | :--- |
-| `generate_topic_from_artefact` | Synthesizes a structured academic research proposal topic (Title, 3-dimensional Urgency, Single Measurable Problem, Variables X & Y, Objectives, Benefits, and Canvas Audit) from any real-world artifact (news, case stories, problem documents, OCR/image descriptions). | `artefact_content`, `artefact_type`, `artefact_title`, `bidang_kajian`, `proposed_method_or_x`, `target_metric_or_y`, `institutional_focus` |
+| `generate_topic_from_artefact` | Synthesizes a structured academic research proposal topic (Title, 3-dimensional Urgency, Single Measurable Problem, Variables X & Y, Objectives, Benefits, and Canvas Audit) from any real-world artifact (news, case stories, problem documents, OCR/image descriptions) and reports it to a Markdown (`.md`) file. | `artefact_content`, `artefact_type`, `artefact_title`, `bidang_kajian`, `proposed_method_or_x`, `target_metric_or_y`, `institutional_focus`, `output_markdown_filename`, `save_to_workspace` |
 | `generate_diagram_image` | Generates high-resolution academic diagrams (Flowchart, Conceptual Framework, Layered Architecture), ensures `/asset` folder exists, and optionally embeds into target DOCX. | `diagram_type`, `title`, `steps_or_nodes`, `variabel_x`, `variabel_y`, `asset_folder`, `target_document_docx` |
 | `insert_diagram_to_document` | Inserts an existing diagram image from `/asset` into a proposal DOCX with official caption numbering (`Gambar X.Y <Judul>`). | `document_filename`, `image_filename_or_path`, `caption_title`, `chapter_num`, `figure_num` |
 | `generate_praproposal_from_topic` | One-shot generator for academic pre-proposal form (`.odt`, format SA2-01A) directly from topic, student metadata, CSV data, or paper-search results with automatic Canvas validation. | `topic`, `variabel_x`, `variabel_y`, `student_metadata`, `csv_filename`, `retrieved_papers`, `output_filename` |
@@ -259,8 +259,8 @@ Duplicates an active pre-proposal (`.odt`) to an incremented version and records
 ### 📊 4. Literature Planning & Ingestion Tools
 
 #### A. `generate_topic_from_artefact`
-Synthesizes a structured academic research proposal topic (Title, 3-dimensional Urgency, Single Measurable Problem, Variables X & Y, Objectives, Benefits, and Canvas Audit) from any real-world artifact (news articles, case stories, problem documents, OCR/image descriptions).
-- **Parameters**: `artefact_content` (str), `artefact_type` (str, default: `"general_text"`), `artefact_title` (str, opt), `bidang_kajian` (str, opt), `proposed_method_or_x` (str, opt), `target_metric_or_y` (str, opt), `institutional_focus` (str, opt)
+Synthesizes a structured academic research proposal topic (Title, 3-dimensional Urgency, Single Measurable Problem, Variables X & Y, Objectives, Benefits, and Canvas Audit) from any real-world artifact (news articles, case stories, problem documents, OCR/image descriptions) and exports a complete formatted Markdown (`.md`) report to the workspace.
+- **Parameters**: `artefact_content` (str), `artefact_type` (str, default: `"general_text"`), `artefact_title` (str, opt), `bidang_kajian` (str, opt), `proposed_method_or_x` (str, opt), `target_metric_or_y` (str, opt), `institutional_focus` (str, opt), `output_markdown_filename` (str, default: `"usulan_topik_riset.md"`), `save_to_workspace` (bool, default: `true`)
 - **Example Payload**:
   ```json
   {
@@ -268,7 +268,8 @@ Synthesizes a structured academic research proposal topic (Title, 3-dimensional 
     "artefact_title": "Lonjakan Serangan Botnet IoT 2025",
     "artefact_content": "Laporan Keamanan Siber menunjukkan lonjakan 300% serangan botnet DDoS pada gateway IoT karena tingginya false alarm dan latensi metode deteksi konvensional.",
     "proposed_method_or_x": "Algoritma Federated Learning Terdistribusi",
-    "bidang_kajian": "Keamanan Siber & Jaringan Komputer"
+    "bidang_kajian": "Keamanan Siber & Jaringan Komputer",
+    "output_markdown_filename": "usulan_topik_riset.md"
   }
   ```
 
