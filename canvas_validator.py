@@ -11,10 +11,31 @@ def check_research_canvas(
     variabel_dependen: str,
     tujuan_penelitian: str,
     manfaat_penelitian: str,
+    judul: Optional[str] = None,
     single_problem_only: bool = True
 ) -> Dict[str, Any]:
     issues: List[str] = []
     passed: List[str] = []
+
+    PROJECT_CLICHE_KEYWORDS = [
+        "rancang bangun", "pengembangan aplikasi", "pembuatan aplikasi",
+        "pembuatan sistem", "membangun sistem", "membangun aplikasi",
+        "pembuatan website", "pengembangan website", "pembuatan game",
+        "desain dan implementasi aplikasi", "rekayasa perangkat lunak aplikasi"
+    ]
+
+    # 0. Check Anti-Rancang Bangun / Output Ilmiah vs Tugas Proyek
+    text_to_audit_project = f"{judul or ''} {rumusan_masalah} {tujuan_penelitian}".lower()
+    found_project_terms = [kw for kw in PROJECT_CLICHE_KEYWORDS if kw in text_to_audit_project]
+    if found_project_terms:
+        issues.append(
+            f"[CLB01-RB01] Paradigma 'Rancang Bangun' atau 'Pengembangan Produk/Aplikasi' terdeteksi ({', '.join(found_project_terms)}). "
+            f"Berdasarkan kaidah Research Design Canvas, penelitian skripsi WAJIB berorientasi pada temuan ilmiah baru (new empirical knowledge), "
+            f"pembuktian empiris atas pengaruh variabel independen (X) terhadap variabel dependen (Y), atau evaluasi komparatif algoritma, "
+            f"BUKAN sekadar membuat produk/aplikasi/perangkat lunak."
+        )
+    else:
+        passed.append("[CLB01-RB01] Judul dan fokus penelitian selaras dengan kaidah penelitian ilmiah empiris (bukan proyek rancang bangun produk).")
 
     # 1. Check Rumusan Masalah
     rm_clean = rumusan_masalah.strip()
@@ -53,7 +74,7 @@ def check_research_canvas(
     if not tp_clean:
         issues.append("[CLB05-01] Tujuan penelitian tidak boleh kosong.")
     else:
-        if "mengetahui bagaimana" in tp_clean or "melihat rancangan" in tp_clean:
+        if "mengetahui bagaimana" in tp_clean or "melihat rancangan" in tp_clean or "membuat aplikasi" in tp_clean or "membangun sistem" in tp_clean:
             issues.append("[CLB05-01] Tujuan penelitian berorientasi tugas proyek (project task), bukan pengujian capaian ilmiah atas variabel penelitian.")
         else:
             passed.append("[CLB05-01] Tujuan penelitian selaras dengan pengujian capaian variabel.")
@@ -109,6 +130,7 @@ def get_canvas_rubric() -> Dict[str, Any]:
                 "M05": "Analytical / Inferential Evaluation Strategy"
             },
             "PRA_Praproposal_SA2_01A": {
+                "PRA_RB": "Anti-Rancang Bangun / Scientific Empirical Knowledge Orientation",
                 "PRA_META": "Student & Topic Identity Completeness",
                 "PRA_LB": "Problem Description within <= 500 words limit",
                 "PRA_LR": "Literature Review & State-of-the-Art within <= 250 words limit",
@@ -164,6 +186,24 @@ def check_praproposal_canvas(
         issues.append("[PRA-META03] Judul / topik pra-proposal tidak boleh kosong.")
     else:
         passed.append("[PRA-META03] Judul pra-proposal terverifikasi.")
+
+    # 1b. Check Anti-Rancang Bangun / Output Ilmiah vs Proyek
+    PROJECT_CLICHE_KEYWORDS = [
+        "rancang bangun", "pengembangan aplikasi", "pembuatan aplikasi",
+        "pembuatan sistem", "membangun sistem", "membangun aplikasi",
+        "pembuatan website", "pengembangan website", "pembuatan game",
+        "desain dan implementasi aplikasi", "rekayasa perangkat lunak aplikasi"
+    ]
+    pra_audit_text = f"{judul} {_extract_text(sections.get('latar_belakang', ''))} {_extract_text(sections.get('rumusan_masalah', ''))}".lower()
+    found_pra_project = [kw for kw in PROJECT_CLICHE_KEYWORDS if kw in pra_audit_text]
+    if found_pra_project:
+        issues.append(
+            f"[PRA-RB01] Paradigma 'Rancang Bangun' atau 'Pengembangan Produk/Aplikasi' terdeteksi ({', '.join(found_pra_project)}). "
+            f"Sesuai kaidah Research Design Canvas, usulan skripsi WAJIB berorientasi pada temuan pengetahuan empiris ilmiah "
+            f"(analisis/evaluasi pengaruh X terhadap Y atau komparasi algoritma), BUKAN tugas proyek pembuatan produk/aplikasi."
+        )
+    else:
+        passed.append("[PRA-RB01] Judul dan usulan penelitian berorientasi pada temuan ilmiah empiris (bukan proyek rancang bangun produk).")
 
     # 2. Validasi Latar Belakang (Maksimal 500 kata)
     lb_text = _extract_text(sections.get("latar_belakang", ""))

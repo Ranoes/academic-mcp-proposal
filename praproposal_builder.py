@@ -126,7 +126,7 @@ def build_praproposal_odt(
         4: metadata.get("keminatan", "Komputasi Cerdas"),
         5: metadata.get("bidang_skripsi", "Artificial Intelligence & Data Science"),
         6: metadata.get("jenis_penelitian", "Implementatif"),
-        7: metadata.get("tipe_penelitian", "Pengembangan Sistem & Komparasi Algoritma"),
+        7: metadata.get("tipe_penelitian", "Penelitian Eksperimental Empiris & Komparasi Algoritma"),
         8: metadata.get("asal_judul", "Usulan Sendiri"),
         9: metadata.get("judul", "")
     }

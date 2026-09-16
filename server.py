@@ -120,12 +120,14 @@ def validate_canvas_compliance(
     variabel_dependen: str,
     tujuan_penelitian: str,
     manfaat_penelitian: str,
+    judul: Optional[str] = None,
     single_problem_only: bool = True
 ) -> dict:
     """
     Memvalidasi kepatuhan naskah proposal terhadap panduan Research Design Model Canvas v2.0.
     Dapat digunakan untuk segala topik skripsi/tesis.
     Memeriksa:
+    0. Anti-Rancang Bangun: output wajib temuan ilmiah empiris baru, BUKAN proyek pembuatan aplikasi/sistem.
     1. Rumusan masalah tunggal dan berorientasi pengukuran (non-deskriptif).
     2. Variabel independen (X) dan dependen (Y) yang terdefinisi eksplisit.
     3. Tujuan penelitian yang linier dengan capaian variabel.
@@ -137,6 +139,7 @@ def validate_canvas_compliance(
         variabel_dependen=variabel_dependen,
         tujuan_penelitian=tujuan_penelitian,
         manfaat_penelitian=manfaat_penelitian,
+        judul=judul,
         single_problem_only=single_problem_only
     )
 
@@ -888,6 +891,7 @@ def generate_proposal_from_topic(
         variabel_dependen=vy,
         tujuan_penelitian=proposal_content["bab1_data"]["tujuan_umum"],
         manfaat_penelitian="; ".join(proposal_content["bab1_data"]["manfaat"]),
+        judul=meta["judul"],
         single_problem_only=True
     )
 
@@ -1042,7 +1046,7 @@ def generate_praproposal_from_topic(
         "keminatan": "Komputasi Cerdas",
         "bidang_skripsi": "Artificial Intelligence & Data Science",
         "jenis_penelitian": "Implementatif",
-        "tipe_penelitian": "Pengembangan Sistem & Komparasi Algoritma",
+        "tipe_penelitian": "Penelitian Eksperimental Empiris & Komparasi Algoritma",
         "asal_judul": "Usulan Sendiri",
         "lokasi": "Malang",
         "nama_pembimbing": "Dr. Mahrus Ali, S.Kom., M.Kom.",

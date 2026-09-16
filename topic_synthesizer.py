@@ -19,13 +19,25 @@ def plan_research(
     """
     clean_topic = topic.strip()
 
+    # Anti-Rancang Bangun / Anti-Project automatic cleaning:
+    # Memastikan topik berorientasi pada temuan pengetahuan ilmiah empiris (bukan proyek pembuatan aplikasi/sistem)
+    PROJECT_PREFIX_PATTERNS = [
+        r"^rancang\s+bangun\s+(?:aplikasi|sistem|website|web|platform|game)?\s*(?:berbasis)?\s*",
+        r"^pengembangan\s+(?:aplikasi|sistem|website|web|platform|game)?\s*(?:berbasis)?\s*",
+        r"^pembuatan\s+(?:aplikasi|sistem|website|web|platform|game)?\s*(?:berbasis)?\s*",
+        r"^membangun\s+(?:aplikasi|sistem|website|web|platform|game)?\s*(?:berbasis)?\s*",
+        r"^desain\s+dan\s+implementasi\s+(?:aplikasi|sistem|website)?\s*(?:berbasis)?\s*"
+    ]
+    for pat in PROJECT_PREFIX_PATTERNS:
+        clean_topic = re.sub(pat, "", clean_topic, flags=re.IGNORECASE).strip()
+
     # Ekstraksi otomatis jika X dan Y belum diberikan
     x_val = variabel_x
     y_val = variabel_y
 
     if not x_val or not y_val:
         # Coba pola umum: "Penerapan X untuk Meningkatkan Y" atau "Optimizing Y using X"
-        match_id = re.search(r'(?:menggunakan|dengan|penerapan|implementasi|berbasis)\s+(.+?)\s+(?:untuk|terhadap|dalam|pada)\s+(.+)', clean_topic, re.IGNORECASE)
+        match_id = re.search(r'(?:menggunakan|dengan|penerapan|implementasi|berbasis|analisis)\s+(.+?)\s+(?:untuk|terhadap|dalam|pada)\s+(.+)', clean_topic, re.IGNORECASE)
         match_en = re.search(r'(?:optimizing|improving|enhancing|predicting|evaluating)\s+(.+?)\s+(?:using|with|via|through)\s+(.+)', clean_topic, re.IGNORECASE)
         
         if match_id:
@@ -40,26 +52,26 @@ def plan_research(
                 x_val = match_en.group(2).strip()
         else:
             if not x_val:
-                x_val = f"Metode/Pendekatan berbasis {clean_topic}"
+                x_val = f"Model/Algoritma berbasis {clean_topic}"
             if not y_val:
-                y_val = f"Kinerja dan Efektivitas {clean_topic}"
+                y_val = f"Kinerja, Akurasi, dan Efisiensi {clean_topic}"
 
-    # Formulasi rumusan masalah non-deskriptif yang berorientasi pengukuran
+    # Formulasi rumusan masalah non-deskriptif yang berorientasi pengukuran empiris ilmiah (X -> Y)
     rumusan_masalah = (
         f"Sejauh mana implementasi {x_val} mampu meningkatkan performa {y_val} "
-        f"secara signifikan dibandingkan dengan metode konvensional?"
+        f"secara signifikan dibandingkan dengan metode baseline/konvensional?"
     )
 
     tujuan_umum = (
-        f"menganalisis, mengimplementasikan, dan menguji efektivitas {x_val} "
+        f"menganalisis dan menguji secara empiris efektivitas {x_val} "
         f"dalam mengoptimalkan {y_val}."
     )
 
     tujuan_khusus = [
-        f"Mengidentifikasi kendala utama dan baseline performa pada {y_val}.",
-        f"Merancang dan memodelkan arsitektur {x_val}.",
-        f"Mengimplementasikan dan menguji model {x_val} pada lingkungan pengujian yang representatif.",
-        f"Mengevaluasi peningkatan performa {y_val} melalui metrik komparasi kuantitatif."
+        f"Mengidentifikasi kendala utama dan mengukur performa baseline pada {y_val}.",
+        f"Memodelkan dan memformulasi arsitektur algoritma {x_val}.",
+        f"Melakukan pengujian eksperimental model {x_val} pada skenario dataset empiris yang representatif.",
+        f"Mengevaluasi peningkatan performa {y_val} melalui metrik komparasi kuantitatif dan uji signifikansi statistik."
     ]
 
     # Kueri pencarian yang dioptimalkan untuk paper-search MCP
@@ -416,7 +428,7 @@ def synthesize_praproposal_from_inputs(
         "keminatan": metadata.get("keminatan", "Komputasi Cerdas"),
         "bidang_skripsi": metadata.get("bidang_skripsi", "Artificial Intelligence & Data Science"),
         "jenis_penelitian": metadata.get("jenis_penelitian", "Implementatif"),
-        "tipe_penelitian": metadata.get("tipe_penelitian", "Pengembangan Sistem & Komparasi Algoritma"),
+        "tipe_penelitian": metadata.get("tipe_penelitian", "Penelitian Eksperimental Empiris & Komparasi Algoritma"),
         "asal_judul": metadata.get("asal_judul", "Usulan Sendiri"),
         "judul": metadata.get("judul", clean_topic.upper()),
         "lokasi": metadata.get("lokasi", "Malang"),

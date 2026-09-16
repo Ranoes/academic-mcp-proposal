@@ -183,17 +183,19 @@ Directly populates and compiles the official SA2-01A `.odt` form from structured
 
 #### A. `validate_canvas_compliance` (Proposal 3-Bab Validation)
 Audits the methodological rigor of a proposal against standard Research Design Canvas rules.
-- **Parameters**: `rumusan_masalah` (str), `variabel_independen` (str), `variabel_dependen` (str), `tujuan_penelitian` (str), `manfaat_penelitian` (str), `single_problem_only` (bool, default: `true`)
+- **Parameters**: `rumusan_masalah` (str), `variabel_independen` (str), `variabel_dependen` (str), `tujuan_penelitian` (str), `manfaat_penelitian` (str), `judul` (str, opt), `single_problem_only` (bool, default: `true`)
 - **Validation Checks**:
+  - `[CLB01-RB01]`: **Anti-Rancang Bangun / Output Ilmiah Empiris**. Detects and strictly forbids software development project / product-building paradigms (*"rancang bangun aplikasi", "pembuatan sistem", "pengembangan website/game"*). Research must yield new empirical scientific knowledge, quantitative algorithm benchmarking, or empirical proof of $X \rightarrow Y$.
   - `[CLB04-01]`: Ensures strictly 1 measurable problem question.
   - `[CLB04-02]`: Enforces non-descriptive, parameter-driven question formulation.
   - `[CLB04-02 / M01-01]`: Verifies explicit Variable $X$ definition.
   - `[CLB04-03 / M01-02]`: Verifies explicit Variable $Y$ definition.
-  - `[CLB05-01]`: Ensures objectives test variable outcomes.
+  - `[CLB05-01]`: Ensures objectives test variable outcomes (rejects project-task phrasing like *"membuat aplikasi"*).
   - `[CLB06-02]`: Eliminates administrative clichés (*"syarat kelulusan", "menambah wawasan"*).
 - **Example Payload**:
   ```json
   {
+    "judul": "ANALISIS KINERJA ADAPTIVE Q-ROUTING TERHADAP OPERATIONAL LIFETIME PADA JARINGAN SENSOR NIRKABEL",
     "rumusan_masalah": "Sejauh manakah implementasi Adaptive Q-Routing mampu memperpanjang network lifetime dibandingkan protokol routing statis pada jaringan sensor nirkabel?",
     "variabel_independen": "Adaptive Q-Routing Mechanism",
     "variabel_dependen": "Network Operational Lifetime dan Packet Delivery Ratio",

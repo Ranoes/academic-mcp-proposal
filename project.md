@@ -86,13 +86,18 @@ graph TD
 
 ### 3.4. `canvas_validator.py` (Validator Metodologi & Research Design Canvas)
 - **Fungsi**: Mengaudit kepatuhan naskah proposal 3 Bab (`.docx`) dan pra-proposal (`.odt` SA2-01A) terhadap kaidah ilmiah standar *Research Design Model Canvas v2.0*.
+- **Prinsip Utama (Framework vs Template)**:
+  - **Template Dokumen (DOCX/ODT)**: Hanya berfungsi sebagai format visual dan tata letak tipografi dokumen (margin, font Times New Roman, heading styles), **BUKAN** penentu kaidah penelitian.
+  - **Research Design Canvas (Framework)**: Menjadi acuan mutlak kaidah metodologi penelitian. Penelitian **WAJIB** beroutput ilmiah empiris (ilmu baru, pembuktian hubungan empiris variabel $X \rightarrow Y$, evaluasi komparasi algoritma kuantitatif), dan **DILARANG KERAS** menggunakan paradigma "Rancang Bangun" / "Tugas Proyek Pembuatan Aplikasi/Produk".
 - **Aturan Validasi Kunci Proposal (3 Bab)**:
+  - `[CLB01-RB01] Anti-Rancang Bangun / Output Ilmiah Empiris`: Menolak judul, rumusan masalah, atau tujuan yang berorientasi pada tugas proyek/rancang bangun aplikasi (misal: *"Rancang Bangun Aplikasi...", "Pembuatan Sistem Website...", "Pengembangan Game..."*).
   - `[CLB04-01] Single Problem Formulation`: Memastikan hanya terdapat tepat 1 rumusan masalah terukur (mencegah pertanyaan majemuk/jamak).
   - `[CLB04-02] Formulation Quality`: Memvalidasi bahwa pertanyaan penelitian diawali dengan frasa evaluasi terukur (misal: *"Sejauh manakah...", "Bagaimanakah tingkat efektivitas..."*) dan bukan pertanyaan kualitatif deskriptif terbuka.
   - `[CLB04-02 / CLB04-03] Explicit X & Y Variables`: Memvalidasi keberadaan variabel independen ($X$) dan variabel dependen ($Y$).
-  - `[CLB05-01] Aligned Objectives`: Memastikan tujuan penelitian berorientasi pada pengujian capaian empiris variabel.
+  - `[CLB05-01] Aligned Objectives`: Memastikan tujuan penelitian berorientasi pada pengujian capaian empiris variabel (menolak *"membuat aplikasi"*, *"membangun sistem"*).
   - `[CLB06-01 / CLB06-02] Actionable Benefits`: Mendeteksi dan menolak klausa administratif klise (*"syarat kelulusan", "menambah wawasan"*), mewajibkan manfaat konkret bagi pemangku kepentingan.
 - **Aturan Validasi Khusus Pra-Proposal SA2-01A (`check_praproposal_canvas`)**:
+  - `[PRA-RB01] Anti-Rancang Bangun & Output Ilmiah`: Memastikan pra-proposal berorientasi pada temuan pengetahuan empiris, bukan rancang bangun produk.
   - `[PRA-LB01] Problem Description Budget`: Maksimal $\le 500$ kata.
   - `[PRA-LR01] Literature Review Budget`: Maksimal $\le 250$ kata.
   - `[PRA-MET01] Methodology Budget`: Maksimal $\le 250$ kata.
